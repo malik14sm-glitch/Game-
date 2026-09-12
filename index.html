@@ -2,14 +2,11 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#05010f">
-
-<title>NEON DRIFT — Cyber Chronicles</title>
+<title>NEON DRIFT — Cyber Chronicles 2.0</title>
 
 <style>
 *{
@@ -33,9 +30,7 @@ html,body{
   touch-action:none;
 }
 
-canvas{
-  display:block;
-}
+canvas{display:block}
 
 #hud{
   position:fixed;
@@ -43,8 +38,6 @@ canvas{
   pointer-events:none;
   z-index:10;
 }
-
-/* ================= TOP HUD ================= */
 
 #topbar{
   position:absolute;
@@ -56,8 +49,7 @@ canvas{
   align-items:flex-start;
 }
 
-#speedo,
-#info{
+#speedo,#info{
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
 }
@@ -101,8 +93,6 @@ canvas{
   letter-spacing:2px;
 }
 
-/* ================= MINIMAP ================= */
-
 #mapWrap{
   position:absolute;
   top:calc(env(safe-area-inset-top,0px) + 70px);
@@ -122,8 +112,6 @@ canvas{
   width:100%;
   height:100%;
 }
-
-/* ================= NITRO ================= */
 
 #nitroLabel{
   position:absolute;
@@ -157,18 +145,13 @@ canvas{
   box-shadow:0 0 10px #ff0;
 }
 
-/* ================= BUTTONS ================= */
-
-.pad,
-.pad-sm{
+.pad,.pad-sm{
   position:absolute;
   pointer-events:auto;
   touch-action:none;
   display:flex;
   align-items:center;
   justify-content:center;
-  -webkit-user-select:none;
-  user-select:none;
 }
 
 .pad{
@@ -350,8 +333,6 @@ canvas{
   bottom:calc(env(safe-area-inset-bottom,0px) + 120px);
 }
 
-/* ================= TOAST ================= */
-
 #toast{
   position:absolute;
   top:50%;
@@ -367,8 +348,6 @@ canvas{
   font-weight:900;
 }
 
-/* ================= SPLASH ================= */
-
 #splash{
   position:fixed;
   inset:0;
@@ -379,8 +358,11 @@ canvas{
   justify-content:center;
   padding:20px;
   text-align:center;
-  background:
-    radial-gradient(circle at 50% 50%,#1a0033,#05010f 70%);
+  background:radial-gradient(
+    circle at 50% 50%,
+    #1a0033,
+    #05010f 70%
+  );
   transition:opacity .5s;
 }
 
@@ -439,7 +421,7 @@ canvas{
 
 <div id="splash">
   <h1>NEON DRIFT</h1>
-  <h2>CYBER CHRONICLES</h2>
+  <h2>CYBER CHRONICLES 2.0</h2>
 
   <p>
     ЛЕВО / ПРАВО — руль<br>
@@ -447,7 +429,7 @@ canvas{
     ▼ — тормоз<br>
     JUMP — прыжок<br>
     N2O — нитро<br>
-    STYLE — 22 машины<br>
+    STYLE — сменить машину<br>
     HORN — гудок<br>
     CAM — камера
   </p>
@@ -508,7 +490,7 @@ canvas{
 import * as THREE from "three";
 
 /* =========================================================
-   SCENE
+   СЦЕНА
 ========================================================= */
 
 const scene = new THREE.Scene();
@@ -517,12 +499,8 @@ scene.background = new THREE.Color(0x05010f);
 
 scene.fog = new THREE.FogExp2(
   0x0a0320,
-  0.019
+  0.024
 );
-
-/* =========================================================
-   RENDERER
-========================================================= */
 
 const renderer = new THREE.WebGLRenderer({
   antialias:true,
@@ -535,21 +513,20 @@ renderer.setSize(
 );
 
 renderer.setPixelRatio(
-  Math.min(devicePixelRatio,1.35)
+  Math.min(devicePixelRatio,1.2)
 );
 
 renderer.toneMapping =
   THREE.ACESFilmicToneMapping;
 
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.25;
+
+renderer.outputColorSpace =
+  THREE.SRGBColorSpace;
 
 document.body.appendChild(
   renderer.domElement
 );
-
-/* =========================================================
-   CAMERA
-========================================================= */
 
 const camera =
   new THREE.PerspectiveCamera(
@@ -559,8 +536,9 @@ const camera =
     2000
   );
 
+
 /* =========================================================
-   LIGHTING
+   СВЕТ
 ========================================================= */
 
 scene.add(
@@ -573,11 +551,13 @@ scene.add(
 const keyLight =
   new THREE.DirectionalLight(
     0xff44ff,
-    0.45
+    0.5
   );
 
 keyLight.position.set(
-  0,100,50
+  0,
+  100,
+  50
 );
 
 scene.add(keyLight);
@@ -585,11 +565,13 @@ scene.add(keyLight);
 const rimLight =
   new THREE.DirectionalLight(
     0x00ffff,
-    0.55
+    0.6
   );
 
 rimLight.position.set(
-  -80,60,-100
+  -80,
+  60,
+  -100
 );
 
 scene.add(rimLight);
@@ -602,8 +584,9 @@ scene.add(
   )
 );
 
+
 /* =========================================================
-   CITY
+   ГОРОД
 ========================================================= */
 
 const cityGroup =
@@ -616,144 +599,590 @@ const collidables = [];
 const blockSize = 42;
 const citySize = 10;
 
-const signColors = [
+const NEON_COLORS = [
   0x00ffff,
   0xff00ff,
   0xff0066,
   0x00ffaa,
   0xffff00,
   0x00aaff,
-  0xff6600
+  0xff6600,
+  0xff2266
 ];
 
-/*
-  Для производительности PointLight
-  используется только у части зданий.
-*/
+const BILLBOARD_TEXTS = [
 
-function makeSkyscraper(x,z){
+  {
+    text:"未来",
+    sub:"FUTURE",
+    color:0xff00ff
+  },
+
+  {
+    text:"東京",
+    sub:"TOKYO",
+    color:0x00ffff
+  },
+
+  {
+    text:"電気",
+    sub:"ELECTRIC",
+    color:0xffff00
+  },
+
+  {
+    text:"ZONE A",
+    sub:"LEVEL 07",
+    color:0xff0066
+  },
+
+  {
+    text:"SYSTEM",
+    sub:"07",
+    color:0x00ffaa
+  },
+
+  {
+    text:"CORE UNIT",
+    sub:"ACTIVE",
+    color:0xff00ff
+  },
+
+  {
+    text:"INNOVATE",
+    sub:"ADAPT",
+    color:0x00ffff
+  },
+
+  {
+    text:"NO LIMITS",
+    sub:"ONLY POSSIBLE",
+    color:0xff2266
+  },
+
+  {
+    text:"サイバー",
+    sub:"CYBER",
+    color:0x00aaff
+  },
+
+  {
+    text:"X-89",
+    sub:"FUTURE",
+    color:0xff6600
+  }
+
+];
+
+const billboardCache =
+  Object.create(null);
+
+
+/* =========================================================
+   БИЛБОРДЫ
+========================================================= */
+
+function makeBillboardTexture(
+  mainText,
+  subText,
+  colorHex
+){
+
+  const canvas =
+    document.createElement("canvas");
+
+  canvas.width = 512;
+  canvas.height = 256;
+
+  const ctx =
+    canvas.getContext("2d");
+
+  ctx.fillStyle = "#05010f";
+  ctx.fillRect(
+    0,
+    0,
+    512,
+    256
+  );
+
+  const color =
+    "#" +
+    colorHex
+      .toString(16)
+      .padStart(6,"0");
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 8;
+
+  ctx.strokeRect(
+    4,
+    4,
+    504,
+    248
+  );
+
+  ctx.fillStyle = color;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 20;
+
+  ctx.font =
+    "bold 90px Arial,sans-serif";
+
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  ctx.fillText(
+    mainText,
+    256,
+    110
+  );
+
+  ctx.shadowBlur = 10;
+
+  ctx.font =
+    "bold 40px Arial,sans-serif";
+
+  ctx.fillText(
+    subText,
+    256,
+    190
+  );
+
+  ctx.shadowBlur = 0;
+
+  ctx.fillStyle = color;
+
+  for(let i=0;i<30;i++){
+
+    ctx.fillRect(
+      Math.random()*512,
+      Math.random()*256,
+      3,
+      1
+    );
+
+  }
+
+  const tex =
+    new THREE.CanvasTexture(canvas);
+
+  tex.colorSpace =
+    THREE.SRGBColorSpace;
+
+  return tex;
+}
+
+
+function getBillboardTex(index){
+
+  if(!billboardCache[index]){
+
+    const data =
+      BILLBOARD_TEXTS[
+        index %
+        BILLBOARD_TEXTS.length
+      ];
+
+    billboardCache[index] =
+      makeBillboardTexture(
+        data.text,
+        data.sub,
+        data.color
+      );
+  }
+
+  return billboardCache[index];
+}
+
+
+/* =========================================================
+   НЕБОСКРЁБ
+========================================================= */
+
+function makeSkyscraper(
+  x,
+  z,
+  forceHeight
+){
+
+  const isLandmark =
+    Math.random() < 0.15;
 
   const h =
-    45 + Math.random()*170;
+    forceHeight ||
+    (
+      isLandmark
+      ?
+      180 + Math.random()*120
+      :
+      50 + Math.random()*150
+    );
 
   const w =
-    15 + Math.random()*12;
+    12 + Math.random()*14;
 
   const d =
-    15 + Math.random()*12;
+    12 + Math.random()*14;
 
-  const geo =
-    new THREE.BoxGeometry(
-      w,h,d
-    );
 
   const bodyMat =
     new THREE.MeshStandardMaterial({
-      color:0x0a0a18,
-      metalness:.82,
-      roughness:.32,
+
+      color:0x08081a,
+
+      metalness:0.85,
+
+      roughness:0.35,
+
       emissive:
-        Math.random()>.5
-        ? 0x001a2a
-        : 0x20001c,
-      emissiveIntensity:.45
+        Math.random() > 0.5
+        ?
+        0x001a2a
+        :
+        0x20001c,
+
+      emissiveIntensity:0.4
+
     });
 
-  const building =
+
+  const body =
     new THREE.Mesh(
-      geo,
+      new THREE.BoxGeometry(
+        w,
+        h,
+        d
+      ),
       bodyMat
     );
 
-  building.position.set(
+  body.position.set(
     x,
     h/2,
     z
   );
 
-  cityGroup.add(building);
+  cityGroup.add(body);
+
 
   collidables.push({
-    x,
-    z,
-    w:w/2+2.5,
-    d:d/2+2.5
+
+    x:x,
+    z:z,
+
+    w:w/2 + 2.5,
+    d:d/2 + 2.5
+
   });
 
-  /* Окна */
+
+  /* ОКНА */
 
   const color =
-    signColors[
+    NEON_COLORS[
       Math.floor(
-        Math.random()*signColors.length
+        Math.random() *
+        NEON_COLORS.length
       )
     ];
 
   const winMat =
     new THREE.MeshBasicMaterial({
-      color,
+
+      color:color,
+
       transparent:true,
-      opacity:.7
+
+      opacity:0.85
+
     });
 
-  const windowCount =
-    3 + Math.floor(Math.random()*4);
-
-  for(let i=0;i<windowCount;i++){
-
-    const win =
-      new THREE.Mesh(
-        new THREE.PlaneGeometry(
-          w*.75,
-          1.2+Math.random()*2
-        ),
-        winMat
-      );
-
-    win.position.copy(
-      building.position
+  const winGeo =
+    new THREE.PlaneGeometry(
+      0.7,
+      0.7
     );
 
-    win.position.y =
-      8 + Math.random()*(h-16);
+  const cols =
+    Math.floor(w/1.6);
 
-    const side =
-      Math.floor(Math.random()*4);
+  const rows =
+    Math.floor(h/3);
 
-    if(side===0){
+  const maxRows =
+    Math.min(rows,42);
 
-      win.position.z += d/2+.06;
 
-    }else if(side===1){
+  for(
+    let r=0;
+    r<maxRows;
+    r++
+  ){
 
-      win.position.z -= d/2+.06;
-      win.rotation.y=Math.PI;
+    for(
+      let c=0;
+      c<cols;
+      c++
+    ){
 
-    }else if(side===2){
+      if(Math.random()>0.55)
+        continue;
 
-      win.position.x += w/2+.06;
-      win.rotation.y=Math.PI/2;
+      const wx =
+        -w/2 +
+        1 +
+        c*(w-2) /
+        Math.max(cols,1);
 
-    }else{
+      const wy =
+        4 +
+        r*2.8;
 
-      win.position.x -= w/2+.06;
-      win.rotation.y=-Math.PI/2;
+
+      const win1 =
+        new THREE.Mesh(
+          winGeo,
+          winMat
+        );
+
+      win1.position.set(
+        x+wx,
+        wy,
+        z+d/2+0.06
+      );
+
+      cityGroup.add(win1);
+
+
+      const win2 =
+        new THREE.Mesh(
+          winGeo,
+          winMat
+        );
+
+      win2.position.set(
+        x+w/2+0.06,
+        wy,
+        z+wx
+      );
+
+      win2.rotation.y =
+        Math.PI/2;
+
+      cityGroup.add(win2);
 
     }
 
-    cityGroup.add(win);
   }
 
-  /* Маяк */
+
+  /* БИЛБОРДЫ */
+
+  const billboardCount =
+    isLandmark
+    ?
+    3
+    :
+    (
+      Math.random()<0.7
+      ?
+      1
+      :
+      0
+    );
+
+
+  for(
+    let b=0;
+    b<billboardCount;
+    b++
+  ){
+
+    const texIndex =
+      Math.floor(
+        Math.random() *
+        BILLBOARD_TEXTS.length
+      );
+
+    const tex =
+      getBillboardTex(
+        texIndex
+      );
+
+
+    const billW =
+      w*0.85;
+
+    const billH =
+      billW*0.5;
+
+
+    const bill =
+      new THREE.Mesh(
+
+        new THREE.PlaneGeometry(
+          billW,
+          billH
+        ),
+
+        new THREE.MeshBasicMaterial({
+          map:tex,
+          side:THREE.DoubleSide
+        })
+
+      );
+
+
+    const billY =
+      15 +
+      Math.random() *
+      Math.max(
+        1,
+        h-30
+      );
+
+
+    const side =
+      Math.floor(
+        Math.random()*4
+      );
+
+
+    if(side===0){
+
+      bill.position.set(
+        x,
+        billY,
+        z+d/2+0.15
+      );
+
+    }
+    else if(side===1){
+
+      bill.position.set(
+        x,
+        billY,
+        z-d/2-0.15
+      );
+
+      bill.rotation.y =
+        Math.PI;
+
+    }
+    else if(side===2){
+
+      bill.position.set(
+        x+w/2+0.15,
+        billY,
+        z
+      );
+
+      bill.rotation.y =
+        Math.PI/2;
+
+    }
+    else{
+
+      bill.position.set(
+        x-w/2-0.15,
+        billY,
+        z
+      );
+
+      bill.rotation.y =
+        -Math.PI/2;
+
+    }
+
+
+    cityGroup.add(bill);
+
+
+    /* Только часть билбордов получает свет */
+
+    if(Math.random()<0.25){
+
+      const glow =
+        new THREE.PointLight(
+          BILLBOARD_TEXTS[
+            texIndex
+          ].color,
+          2.5,
+          18,
+          2
+        );
+
+      glow.position.copy(
+        bill.position
+      );
+
+      cityGroup.add(glow);
+
+    }
+
+  }
+
+
+  /* ВЕРТИКАЛЬНАЯ РЕКЛАМА */
+
+  if(Math.random()<0.4){
+
+    const tex =
+      getBillboardTex(
+        Math.floor(
+          Math.random() *
+          BILLBOARD_TEXTS.length
+        )
+      );
+
+    const vert =
+      new THREE.Mesh(
+
+        new THREE.PlaneGeometry(
+          3,
+          12
+        ),
+
+        new THREE.MeshBasicMaterial({
+          map:tex
+        })
+
+      );
+
+    vert.position.set(
+
+      x+w/2+0.2,
+
+      15 +
+      Math.random()*40,
+
+      z+d/2+0.2
+
+    );
+
+    vert.rotation.y =
+      Math.PI/4;
+
+    cityGroup.add(vert);
+
+  }
+
+
+  /* МАЯК */
 
   const beacon =
     new THREE.Mesh(
+
       new THREE.SphereGeometry(
-        .8,8,8
+        0.9,
+        8,
+        8
       ),
+
       new THREE.MeshBasicMaterial({
-        color
+        color:color
       })
+
     );
 
   beacon.position.set(
@@ -764,17 +1193,14 @@ function makeSkyscraper(x,z){
 
   cityGroup.add(beacon);
 
-  /*
-    Только каждое 5-е здание получает PointLight.
-  */
 
-  if(Math.random()<.2){
+  if(Math.random()<0.06){
 
     const light =
       new THREE.PointLight(
         color,
-        5,
-        35,
+        4,
+        32,
         2
       );
 
@@ -785,10 +1211,13 @@ function makeSkyscraper(x,z){
     );
 
     cityGroup.add(light);
+
   }
+
 }
 
-/* Создание города */
+
+/* СОЗДАНИЕ ГОРОДА */
 
 for(
   let i=-citySize;
@@ -803,28 +1232,44 @@ for(
   ){
 
     if(
-      Math.abs(i)%2===0 &&
-      Math.abs(j)%2===0
-    ) continue;
+      Math.abs(i)%3===0 &&
+      Math.abs(j)%3===0
+    )
+      continue;
+
 
     makeSkyscraper(
-      i*blockSize,
-      j*blockSize
+
+      i*blockSize +
+      (Math.random()-.5)*4,
+
+      j*blockSize +
+      (Math.random()-.5)*4
+
     );
+
   }
+
 }
 
+
 /* =========================================================
-   SKY BRIDGES
+   МОСТЫ
 ========================================================= */
 
 const bridgeMat =
   new THREE.MeshStandardMaterial({
+
     color:0x111122,
+
     emissive:0x003333,
-    emissiveIntensity:.7,
-    metalness:.85,
-    roughness:.25
+
+    emissiveIntensity:0.8,
+
+    metalness:0.9,
+
+    roughness:0.2
+
   });
 
 const bridgeEdgeMat =
@@ -832,35 +1277,49 @@ const bridgeEdgeMat =
     color:0x00ffff
   });
 
-const bridges=[];
+const bridgeEdgeMat2 =
+  new THREE.MeshBasicMaterial({
+    color:0xff00ff
+  });
 
-for(let i=0;i<14;i++){
+
+for(let i=0;i<32;i++){
 
   const len =
-    70+Math.random()*100;
+    60 +
+    Math.random()*120;
 
   const x =
-    (Math.random()-.5)*850;
+    (Math.random()-.5)*900;
 
   const z =
-    (Math.random()-.5)*850;
+    (Math.random()-.5)*900;
 
   const y =
-    55+Math.random()*100;
+    45 +
+    Math.random()*110;
 
   const rotation =
     Math.random()*Math.PI;
 
+
   const bridge =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        len,2,5
+        len,
+        2,
+        5
       ),
+
       bridgeMat
+
     );
 
   bridge.position.set(
-    x,y,z
+    x,
+    y,
+    z
   );
 
   bridge.rotation.y =
@@ -868,12 +1327,22 @@ for(let i=0;i<14;i++){
 
   cityGroup.add(bridge);
 
+
   const edge =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        len,.12,.12
+        len,
+        0.14,
+        0.14
       ),
+
+      Math.random()>0.5
+      ?
       bridgeEdgeMat
+      :
+      bridgeEdgeMat2
+
     );
 
   edge.position.set(
@@ -887,32 +1356,31 @@ for(let i=0;i<14;i++){
 
   cityGroup.add(edge);
 
-  bridges.push({
-    x,
-    z,
-    y,
-    len
-  });
 }
 
-/* =========================================================
-   GROUND
-========================================================= */
 
-const groundMat =
-  new THREE.MeshStandardMaterial({
-    color:0x08081a,
-    metalness:.92,
-    roughness:.14
-  });
+/* =========================================================
+   ЗЕМЛЯ И ДОРОГИ
+========================================================= */
 
 const ground =
   new THREE.Mesh(
+
     new THREE.PlaneGeometry(
       5000,
       5000
     ),
-    groundMat
+
+    new THREE.MeshStandardMaterial({
+
+      color:0x08081a,
+
+      metalness:0.95,
+
+      roughness:0.1
+
+    })
+
   );
 
 ground.rotation.x =
@@ -920,16 +1388,18 @@ ground.rotation.x =
 
 scene.add(ground);
 
-/* =========================================================
-   ROAD NEON
-========================================================= */
 
 const roadLineMat =
   new THREE.LineBasicMaterial({
+
     color:0x00ffff,
+
     transparent:true,
-    opacity:.7
+
+    opacity:0.75
+
   });
+
 
 for(
   let i=-citySize-1;
@@ -937,56 +1407,64 @@ for(
   i++
 ){
 
-  const vertical =
+  const vGeo =
     new THREE.BufferGeometry()
       .setFromPoints([
+
         new THREE.Vector3(
           i*blockSize,
-          .05,
+          0.05,
           -citySize*blockSize-100
         ),
+
         new THREE.Vector3(
           i*blockSize,
-          .05,
+          0.05,
           citySize*blockSize+100
         )
+
       ]);
 
-  const horizontal =
+
+  const hGeo =
     new THREE.BufferGeometry()
       .setFromPoints([
+
         new THREE.Vector3(
           -citySize*blockSize-100,
-          .05,
+          0.05,
           i*blockSize
         ),
+
         new THREE.Vector3(
           citySize*blockSize+100,
-          .05,
+          0.05,
           i*blockSize
         )
+
       ]);
 
+
   scene.add(
     new THREE.Line(
-      vertical,
+      vGeo,
+      roadLineMat
+    ),
+
+    new THREE.Line(
+      hGeo,
       roadLineMat
     )
   );
 
-  scene.add(
-    new THREE.Line(
-      horizontal,
-      roadLineMat
-    )
-  );
 }
 
+
 /* =========================================================
-   RAIN
+   ДОЖДЬ
 ========================================================= */
 
-const rainCount = 1800;
+const rainCount = 1400;
 
 const rainGeo =
   new THREE.BufferGeometry();
@@ -996,7 +1474,12 @@ const rainPos =
     rainCount*3
   );
 
-for(let i=0;i<rainCount;i++){
+
+for(
+  let i=0;
+  i<rainCount;
+  i++
+){
 
   rainPos[i*3] =
     (Math.random()-.5)*220;
@@ -1006,7 +1489,9 @@ for(let i=0;i<rainCount;i++){
 
   rainPos[i*3+2] =
     (Math.random()-.5)*220;
+
 }
+
 
 rainGeo.setAttribute(
   "position",
@@ -1016,61 +1501,537 @@ rainGeo.setAttribute(
   )
 );
 
+
 const rain =
   new THREE.Points(
+
     rainGeo,
+
     new THREE.PointsMaterial({
+
       color:0xaaeaff,
-      size:.14,
+
+      size:0.14,
+
       transparent:true,
-      opacity:.65,
+
+      opacity:0.65,
+
       sizeAttenuation:true
+
     })
+
   );
 
 scene.add(rain);
 
+
 /* =========================================================
-   CAR STYLES
+   ЛЕТАЮЩИЕ МАШИНЫ
 ========================================================= */
 
-const carStyles=[
+const flyingCars = [];
 
-{name:"SPECTRE",body:0x101018,neon:0x00ffff,wings:false,turbines:1,robotic:.2},
-{name:"RONIN",body:0x1a0a0a,neon:0xff0044,wings:true,turbines:2,robotic:.3},
-{name:"CHROME",body:0xdddddd,neon:0xff00ff,wings:false,turbines:2,robotic:.1},
-{name:"WRAITH",body:0x0a0a2a,neon:0x6600ff,wings:true,turbines:3,robotic:.5},
-{name:"MECHA-01",body:0x222228,neon:0x00ff88,wings:true,turbines:2,robotic:.9},
-{name:"MECHA-02",body:0x2a1a10,neon:0xffaa00,wings:true,turbines:3,robotic:.95},
-{name:"NEON SAMURAI",body:0x180020,neon:0xff0066,wings:false,turbines:2,robotic:.4},
-{name:"GHOST",body:0xeeeeee,neon:0x00ffff,wings:false,turbines:1,robotic:.15},
-{name:"VORTEX",body:0x0a1a2a,neon:0x00aaff,wings:true,turbines:3,robotic:.6},
-{name:"KITSUNE",body:0x2a0a1a,neon:0xff44aa,wings:false,turbines:2,robotic:.35},
-{name:"TITAN",body:0x111111,neon:0xff2200,wings:true,turbines:4,robotic:.7},
-{name:"PRISM",body:0x445566,neon:0x88ffff,wings:false,turbines:2,robotic:.2},
-{name:"RAZOR",body:0x0a0a0a,neon:0xff00ff,wings:true,turbines:2,robotic:.55},
-{name:"AURORA",body:0x203040,neon:0x00ffcc,wings:false,turbines:3,robotic:.45},
-{name:"BULLET",body:0x330000,neon:0xff3300,wings:false,turbines:1,robotic:.25},
-{name:"ZERO",body:0x000000,neon:0xffffff,wings:true,turbines:2,robotic:.5},
-{name:"HANNYA",body:0x200010,neon:0xff1155,wings:true,turbines:3,robotic:.65},
-{name:"SPECTER-X",body:0x0a0a1a,neon:0x00eeff,wings:true,turbines:4,robotic:.8},
-{name:"CHROME-2",body:0xbbbbcc,neon:0xaa00ff,wings:false,turbines:2,robotic:.3},
-{name:"NYX",body:0x050510,neon:0x7700ff,wings:true,turbines:3,robotic:.75},
-{name:"EMBER",body:0x220a00,neon:0xff6600,wings:false,turbines:2,robotic:.4},
-{name:"HALO",body:0x101820,neon:0xaaffff,wings:false,turbines:4,robotic:.85}
+const carColors = [
+  0xff0044,
+  0x00ffff,
+  0xff00ff,
+  0x00ff88
+];
+
+
+for(let i=0;i<18;i++){
+
+  const fg =
+    new THREE.Group();
+
+  const color =
+    carColors[
+      Math.floor(
+        Math.random()*
+        carColors.length
+      )
+    ];
+
+
+  const body =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        2.2,
+        0.5,
+        4.5
+      ),
+
+      new THREE.MeshStandardMaterial({
+
+        color:0x08081a,
+
+        metalness:0.9,
+
+        roughness:0.3,
+
+        emissive:color,
+
+        emissiveIntensity:0.4
+
+      })
+
+    );
+
+  fg.add(body);
+
+
+  const cab =
+    new THREE.Mesh(
+
+      new THREE.BoxGeometry(
+        1.4,
+        0.4,
+        1.5
+      ),
+
+      new THREE.MeshBasicMaterial({
+        color:0x000814
+      })
+
+    );
+
+  cab.position.set(
+    0,
+    0.42,
+    -0.2
+  );
+
+  fg.add(cab);
+
+
+  const hlMat =
+    new THREE.MeshBasicMaterial({
+      color:0xffffff
+    });
+
+  for(
+    const hx of [-0.7,0.7]
+  ){
+
+    const hl =
+      new THREE.Mesh(
+        new THREE.BoxGeometry(
+          0.4,
+          0.15,
+          0.1
+        ),
+        hlMat
+      );
+
+    hl.position.set(
+      hx,
+      0.05,
+      2.3
+    );
+
+    fg.add(hl);
+
+  }
+
+
+  const blMat =
+    new THREE.MeshBasicMaterial({
+      color:0xff0033
+    });
+
+
+  for(
+    const bx of [-0.7,0.7]
+  ){
+
+    const bl =
+      new THREE.Mesh(
+        new THREE.BoxGeometry(
+          0.4,
+          0.12,
+          0.1
+        ),
+        blMat
+      );
+
+    bl.position.set(
+      bx,
+      0.05,
+      -2.3
+    );
+
+    fg.add(bl);
+
+  }
+
+
+  fg.position.set(
+
+    (Math.random()-.5)*1000,
+
+    40+Math.random()*130,
+
+    (Math.random()-.5)*1000
+
+  );
+
+
+  fg.rotation.y =
+    Math.random()*Math.PI*2;
+
+
+  fg.userData = {
+
+    speed:
+      8+Math.random()*12,
+
+    heading:
+      fg.rotation.y,
+
+    baseY:
+      40+Math.random()*130
+
+  };
+
+
+  scene.add(fg);
+
+  flyingCars.push(fg);
+
+}
+
+
+function updateFlyingCars(dt){
+
+  const t =
+    performance.now()*0.001;
+
+
+  for(
+    let i=0;
+    i<flyingCars.length;
+    i++
+  ){
+
+    const c =
+      flyingCars[i];
+
+
+    c.userData.heading +=
+      Math.sin(t+i)*
+      0.15*
+      dt;
+
+
+    c.position.x +=
+      Math.sin(
+        c.userData.heading
+      ) *
+      c.userData.speed *
+      dt;
+
+
+    c.position.z +=
+      Math.cos(
+        c.userData.heading
+      ) *
+      c.userData.speed *
+      dt;
+
+
+    c.position.y =
+      c.userData.baseY +
+      Math.sin(
+        t*2+i
+      )*1.5;
+
+
+    c.rotation.y =
+      c.userData.heading;
+
+    c.rotation.z =
+      Math.sin(t+i)*0.08;
+
+
+    const bound = 700;
+
+
+    if(
+      Math.abs(c.position.x)>bound
+    ){
+
+      c.position.x =
+        -Math.sign(
+          c.position.x
+        )*bound;
+
+      c.userData.heading =
+        Math.random()*Math.PI*2;
+
+    }
+
+
+    if(
+      Math.abs(c.position.z)>bound
+    ){
+
+      c.position.z =
+        -Math.sign(
+          c.position.z
+        )*bound;
+
+      c.userData.heading =
+        Math.random()*Math.PI*2;
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   СТИЛИ МАШИН
+========================================================= */
+
+const carStyles = [
+
+  {
+    name:"SPECTRE",
+    body:0x101018,
+    neon:0x00ffff,
+    wings:false,
+    turbines:1,
+    robotic:.2
+  },
+
+  {
+    name:"RONIN",
+    body:0x1a0a0a,
+    neon:0xff0044,
+    wings:true,
+    turbines:2,
+    robotic:.3
+  },
+
+  {
+    name:"CHROME",
+    body:0xdddddd,
+    neon:0xff00ff,
+    wings:false,
+    turbines:2,
+    robotic:.1
+  },
+
+  {
+    name:"WRAITH",
+    body:0x0a0a2a,
+    neon:0x6600ff,
+    wings:true,
+    turbines:3,
+    robotic:.5
+  },
+
+  {
+    name:"MECHA-01",
+    body:0x222228,
+    neon:0x00ff88,
+    wings:true,
+    turbines:2,
+    robotic:.9
+  },
+
+  {
+    name:"MECHA-02",
+    body:0x2a1a10,
+    neon:0xffaa00,
+    wings:true,
+    turbines:3,
+    robotic:.95
+  },
+
+  {
+    name:"NEON SAMURAI",
+    body:0x180020,
+    neon:0xff0066,
+    wings:false,
+    turbines:2,
+    robotic:.4
+  },
+
+  {
+    name:"GHOST",
+    body:0xeeeeee,
+    neon:0x00ffff,
+    wings:false,
+    turbines:1,
+    robotic:.15
+  },
+
+  {
+    name:"VORTEX",
+    body:0x0a1a2a,
+    neon:0x00aaff,
+    wings:true,
+    turbines:3,
+    robotic:.6
+  },
+
+  {
+    name:"KITSUNE",
+    body:0x2a0a1a,
+    neon:0xff44aa,
+    wings:false,
+    turbines:2,
+    robotic:.35
+  },
+
+  {
+    name:"TITAN",
+    body:0x111111,
+    neon:0xff2200,
+    wings:true,
+    turbines:4,
+    robotic:.7
+  },
+
+  {
+    name:"PRISM",
+    body:0x445566,
+    neon:0x88ffff,
+    wings:false,
+    turbines:2,
+    robotic:.2
+  },
+
+  {
+    name:"RAZOR",
+    body:0x0a0a0a,
+    neon:0xff00ff,
+    wings:true,
+    turbines:2,
+    robotic:.55
+  },
+
+  {
+    name:"AURORA",
+    body:0x203040,
+    neon:0x00ffcc,
+    wings:false,
+    turbines:3,
+    robotic:.45
+  },
+
+  {
+    name:"BULLET",
+    body:0x330000,
+    neon:0xff3300,
+    wings:false,
+    turbines:1,
+    robotic:.25
+  },
+
+  {
+    name:"ZERO",
+    body:0x000000,
+    neon:0xffffff,
+    wings:true,
+    turbines:2,
+    robotic:.5
+  },
+
+  {
+    name:"HANNYA",
+    body:0x200010,
+    neon:0xff1155,
+    wings:true,
+    turbines:3,
+    robotic:.65
+  },
+
+  {
+    name:"SPECTER-X",
+    body:0x0a0a1a,
+    neon:0x00eeff,
+    wings:true,
+    turbines:4,
+    robotic:.8
+  },
+
+  {
+    name:"CHROME-2",
+    body:0xbbbbcc,
+    neon:0xaa00ff,
+    wings:false,
+    turbines:2,
+    robotic:.3
+  },
+
+  {
+    name:"NYX",
+    body:0x050510,
+    neon:0x7700ff,
+    wings:true,
+    turbines:3,
+    robotic:.75
+  },
+
+  {
+    name:"EMBER",
+    body:0x220a00,
+    neon:0xff6600,
+    wings:false,
+    turbines:2,
+    robotic:.4
+  },
+
+  {
+    name:"HALO",
+    body:0x101820,
+    neon:0xaaffff,
+    wings:false,
+    turbines:4,
+    robotic:.85
+  },
+
+  {
+    name:"NCPD POLICE",
+    body:0xf0f0f5,
+    neon:0x0033ff,
+    wings:false,
+    turbines:2,
+    robotic:.3,
+    police:true
+  },
+
+  {
+    name:"RETRO RED",
+    body:0xaa0022,
+    neon:0xff2244,
+    wings:true,
+    turbines:4,
+    robotic:.2,
+    retro:true
+  }
 
 ];
 
-let currentStyle=0;
+let currentStyle = 0;
+
 
 /* =========================================================
-   CAR
+   МАШИНА
 ========================================================= */
 
 const car =
   new THREE.Group();
 
 scene.add(car);
+
+
+/* Подсветка */
 
 const underglow =
   new THREE.PointLight(
@@ -1081,31 +2042,42 @@ const underglow =
   );
 
 underglow.position.set(
-  0,-.7,0
+  0,
+  -0.7,
+  0
 );
 
 car.add(underglow);
 
+
 const underglow2 =
   underglow.clone();
 
-underglow2.position.z=-2.2;
+underglow2.position.z =
+  -2.2;
 
 car.add(underglow2);
+
 
 const underglow3 =
   underglow.clone();
 
-underglow3.position.z=2.2;
-underglow3.intensity=5;
+underglow3.position.z =
+  2.2;
+
+underglow3.intensity =
+  5;
 
 car.add(underglow3);
 
+
 /* Фары */
 
-const headlights=[];
+const headlights = [];
 
-for(const x of [-.9,.9]){
+for(
+  const x of [-0.9,0.9]
+){
 
   const light =
     new THREE.SpotLight(
@@ -1113,12 +2085,14 @@ for(const x of [-.9,.9]){
       5,
       70,
       Math.PI/5,
-      .4,
+      0.4,
       1.5
     );
 
   light.position.set(
-    x,.6,2.3
+    x,
+    0.6,
+    2.3
   );
 
   light.target.position.set(
@@ -1133,9 +2107,11 @@ for(const x of [-.9,.9]){
   );
 
   headlights.push(light);
+
 }
 
-/* Стопы */
+
+/* Стоп-сигналы */
 
 const brakeLightL =
   new THREE.PointLight(
@@ -1146,17 +2122,58 @@ const brakeLightL =
   );
 
 brakeLightL.position.set(
-  -.9,.75,-2.3
+  -0.9,
+  0.75,
+  -2.3
 );
 
 car.add(brakeLightL);
 
+
 const brakeLightR =
   brakeLightL.clone();
 
-brakeLightR.position.x=.9;
+brakeLightR.position.x =
+  0.9;
 
 car.add(brakeLightR);
+
+
+/* Полиция */
+
+const policeLightL =
+  new THREE.PointLight(
+    0x0033ff,
+    0,
+    12,
+    2
+  );
+
+policeLightL.position.set(
+  -0.5,
+  1.5,
+  -0.5
+);
+
+car.add(policeLightL);
+
+
+const policeLightR =
+  new THREE.PointLight(
+    0xff0022,
+    0,
+    12,
+    2
+  );
+
+policeLightR.position.set(
+  0.5,
+  1.5,
+  -0.5
+);
+
+car.add(policeLightR);
+
 
 /* Группы */
 
@@ -1178,192 +2195,314 @@ const roboticGroup =
 const wheelsGroup =
   new THREE.Group();
 
+const policeGroup =
+  new THREE.Group();
+
+
 car.add(
   bodyGroup,
   neonGroup,
   wingGroup,
   turbineGroup,
   roboticGroup,
-  wheelsGroup
+  wheelsGroup,
+  policeGroup
 );
+
+
+/* =========================================================
+   БЕЗОПАСНАЯ ОЧИСТКА
+========================================================= */
+
+function disposeObjectTree(obj){
+
+  if(obj.children){
+
+    for(
+      const child of [...obj.children]
+    ){
+
+      obj.remove(child);
+
+      disposeObjectTree(child);
+
+    }
+
+  }
+
+
+  if(obj.geometry){
+
+    obj.geometry.dispose();
+
+  }
+
+
+  if(obj.material){
+
+    const materials =
+      Array.isArray(obj.material)
+      ?
+      obj.material
+      :
+      [obj.material];
+
+
+    for(
+      const material of materials
+    ){
+
+      if(
+        material.map &&
+        material.map.userData &&
+        material.map.userData.disposeWithCar
+      ){
+
+        material.map.dispose();
+
+      }
+
+      material.dispose();
+
+    }
+
+  }
+
+}
+
 
 function clearGroup(group){
 
-  while(group.children.length){
+  while(
+    group.children.length
+  ){
 
     const obj =
-      group.children.pop();
+      group.children[
+        group.children.length-1
+      ];
 
-    if(obj.geometry)
-      obj.geometry.dispose();
+    group.remove(obj);
 
-    if(obj.material){
+    disposeObjectTree(obj);
 
-      if(Array.isArray(obj.material)){
-
-        obj.material.forEach(
-          m=>m.dispose()
-        );
-
-      }else{
-
-        obj.material.dispose();
-
-      }
-    }
   }
+
 }
 
+
 /* =========================================================
-   BUILD CAR
+   СОЗДАНИЕ МАШИНЫ
 ========================================================= */
 
 function buildCar(style){
 
-  [
-    bodyGroup,
-    neonGroup,
-    wingGroup,
-    turbineGroup,
-    roboticGroup,
-    wheelsGroup
-  ].forEach(clearGroup);
+  clearGroup(bodyGroup);
+  clearGroup(neonGroup);
+  clearGroup(wingGroup);
+  clearGroup(turbineGroup);
+  clearGroup(roboticGroup);
+  clearGroup(wheelsGroup);
+  clearGroup(policeGroup);
 
-  /* BODY */
+
+  /* Основные материалы */
 
   const bodyMat =
     new THREE.MeshStandardMaterial({
+
       color:style.body,
-      metalness:.95,
-      roughness:.2
+
+      metalness:0.95,
+
+      roughness:0.2
+
     });
+
+
+  const cabinMat =
+    new THREE.MeshStandardMaterial({
+
+      color:0x000814,
+
+      metalness:1,
+
+      roughness:0.05,
+
+      emissive:style.neon,
+
+      emissiveIntensity:0.2
+
+    });
+
+
+  const visorMat =
+    new THREE.MeshStandardMaterial({
+
+      color:0x000000,
+
+      metalness:1,
+
+      roughness:0.02,
+
+      emissive:style.neon,
+
+      emissiveIntensity:0.3
+
+    });
+
+
+  /* Корпус */
 
   const hull =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        2.3,.55,4.8
+        2.3,
+        0.55,
+        4.8
       ),
+
       bodyMat
+
     );
 
-  hull.position.y=.5;
+  hull.position.y =
+    0.5;
+
   bodyGroup.add(hull);
 
-  /* NOSE */
 
   const nose =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        2.1,.4,1.1
+        2.1,
+        0.4,
+        1.1
       ),
+
       bodyMat
+
     );
 
   nose.position.set(
-    0,.5,2.4
-  );
-
-  nose.scale.set(
-    1,.85,1
+    0,
+    0.5,
+    2.4
   );
 
   bodyGroup.add(nose);
 
-  /* CABIN */
-
-  const cabinMat =
-    new THREE.MeshStandardMaterial({
-      color:0x000814,
-      metalness:1,
-      roughness:.05,
-      emissive:style.neon,
-      emissiveIntensity:.2
-    });
 
   const cabin =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        1.7,.6,1.9
+        1.7,
+        0.6,
+        1.9
       ),
+
       cabinMat
+
     );
 
   cabin.position.set(
-    0,1.02,-.2
+    0,
+    1.02,
+    -0.2
   );
 
   bodyGroup.add(cabin);
 
-  /* VISOR */
 
   const visor =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        1.75,.25,.15
+        1.75,
+        0.25,
+        0.15
       ),
-      new THREE.MeshStandardMaterial({
-        color:0x000000,
-        metalness:1,
-        roughness:.02,
-        emissive:style.neon,
-        emissiveIntensity:.3
-      })
+
+      visorMat
+
     );
 
   visor.position.set(
-    0,1.05,.78
+    0,
+    1.05,
+    0.78
   );
 
-  visor.rotation.x=-.25;
+  visor.rotation.x =
+    -0.25;
 
   bodyGroup.add(visor);
 
-  /* TAIL */
 
   const tail =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        2.15,.28,.7
+        2.15,
+        0.28,
+        0.7
       ),
+
       bodyMat
+
     );
 
   tail.position.set(
-    0,.78,-2.35
+    0,
+    0.78,
+    -2.35
   );
 
   bodyGroup.add(tail);
 
-  /* NEON */
+
+  /* Неон */
 
   const neonMat =
     new THREE.MeshBasicMaterial({
       color:style.neon
     });
 
-  const sideGeo =
-    new THREE.BoxGeometry(
-      .07,.07,4.4
-    );
 
   const leftStrip =
     new THREE.Mesh(
-      sideGeo,
+      new THREE.BoxGeometry(
+        0.07,
+        0.07,
+        4.4
+      ),
       neonMat
     );
 
   leftStrip.position.set(
-    -1.16,.35,0
+    -1.16,
+    0.35,
+    0
   );
+
 
   const rightStrip =
     new THREE.Mesh(
-      sideGeo,
+      new THREE.BoxGeometry(
+        0.07,
+        0.07,
+        4.4
+      ),
       neonMat
     );
 
   rightStrip.position.set(
-    1.16,.35,0
+    1.16,
+    0.35,
+    0
   );
 
   neonGroup.add(
@@ -1371,118 +2510,578 @@ function buildCar(style){
     rightStrip
   );
 
+
   const frontStrip =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        1.9,.07,.07
+        1.9,
+        0.07,
+        0.07
       ),
+
       neonMat
+
     );
 
   frontStrip.position.set(
-    0,.35,2.5
+    0,
+    0.35,
+    2.5
   );
 
-  neonGroup.add(
-    frontStrip
-  );
 
   const backStrip =
-    frontStrip.clone();
+    new THREE.Mesh(
 
-  backStrip.position.z=-2.5;
+      new THREE.BoxGeometry(
+        1.9,
+        0.07,
+        0.07
+      ),
+
+      neonMat
+
+    );
+
+  backStrip.position.set(
+    0,
+    0.35,
+    -2.5
+  );
+
 
   neonGroup.add(
+    frontStrip,
     backStrip
   );
 
-  /* TOP */
 
   const topStrip =
     new THREE.Mesh(
+
       new THREE.BoxGeometry(
-        1.5,.05,1.5
+        1.5,
+        0.05,
+        1.5
       ),
+
       neonMat
+
     );
 
   topStrip.position.set(
-    0,1.32,-.2
+    0,
+    1.32,
+    -0.2
   );
 
-  neonGroup.add(
-    topStrip
-  );
+  neonGroup.add(topStrip);
 
-  /* HEADLIGHTS */
+
+  /* Фары */
 
   const headMat =
     new THREE.MeshBasicMaterial({
       color:0xffffff
     });
 
-  for(const x of [-.85,.85]){
+
+  for(
+    const x of [-0.85,0.85]
+  ){
 
     const h =
       new THREE.Mesh(
+
         new THREE.BoxGeometry(
-          .5,.18,.08
+          0.5,
+          0.18,
+          0.08
         ),
+
         headMat
+
       );
 
     h.position.set(
-      x,.55,2.95
+      x,
+      0.55,
+      2.95
     );
 
     bodyGroup.add(h);
+
   }
 
-  /* BRAKES */
+
+  /* Стопы */
 
   const brakeMat =
     new THREE.MeshBasicMaterial({
       color:0xff0033
     });
 
-  for(const x of [-.85,.85]){
+
+  for(
+    const x of [-0.85,0.85]
+  ){
 
     const b =
       new THREE.Mesh(
+
         new THREE.BoxGeometry(
-          .5,.15,.08
+          0.5,
+          0.15,
+          0.08
         ),
+
         brakeMat
+
       );
 
     b.position.set(
-      x,.7,-2.72
+      x,
+      0.7,
+      -2.72
     );
 
     bodyGroup.add(b);
+
   }
 
-  /* WINGS */
 
-  if(style.wings){
+  /* =====================================================
+     NCPD
+  ===================================================== */
+
+  if(style.police){
+
+    const stripe =
+      new THREE.Mesh(
+
+        new THREE.BoxGeometry(
+          2.32,
+          0.3,
+          4.82
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+          color:0x0a0a12,
+
+          metalness:0.9,
+
+          roughness:0.3
+
+        })
+
+      );
+
+    stripe.position.set(
+      0,
+      0.55,
+      0
+    );
+
+    bodyGroup.add(stripe);
+
+
+    const base =
+      new THREE.Mesh(
+
+        new THREE.BoxGeometry(
+          0.7,
+          0.15,
+          0.3
+        ),
+
+        new THREE.MeshStandardMaterial({
+          color:0x111111
+        })
+
+      );
+
+    base.position.set(
+      0,
+      1.4,
+      0.1
+    );
+
+    policeGroup.add(base);
+
+
+    const blue =
+      new THREE.Mesh(
+
+        new THREE.SphereGeometry(
+          0.18,
+          10,
+          10
+        ),
+
+        new THREE.MeshBasicMaterial({
+          color:0x0033ff
+        })
+
+      );
+
+    blue.position.set(
+      -0.3,
+      1.58,
+      0.1
+    );
+
+    policeGroup.add(blue);
+
+
+    const red =
+      new THREE.Mesh(
+
+        new THREE.SphereGeometry(
+          0.18,
+          10,
+          10
+        ),
+
+        new THREE.MeshBasicMaterial({
+          color:0xff0022
+        })
+
+      );
+
+    red.position.set(
+      0.3,
+      1.58,
+      0.1
+    );
+
+    policeGroup.add(red);
+
+
+    const canvas =
+      document.createElement("canvas");
+
+    canvas.width = 256;
+    canvas.height = 64;
+
+    const ctx =
+      canvas.getContext("2d");
+
+    ctx.fillStyle =
+      "#f0f0f5";
+
+    ctx.fillRect(
+      0,
+      0,
+      256,
+      64
+    );
+
+    ctx.fillStyle =
+      "#0a0a12";
+
+    ctx.font =
+      "bold 40px Arial";
+
+    ctx.textAlign =
+      "center";
+
+    ctx.textBaseline =
+      "middle";
+
+    ctx.fillText(
+      "POLICE",
+      128,
+      32
+    );
+
+
+    const tex =
+      new THREE.CanvasTexture(
+        canvas
+      );
+
+    tex.colorSpace =
+      THREE.SRGBColorSpace;
+
+    tex.userData.disposeWithCar =
+      true;
+
+
+    for(
+      const side of [-1,1]
+    ){
+
+      const decal =
+        new THREE.Mesh(
+
+          new THREE.PlaneGeometry(
+            1.4,
+            0.35
+          ),
+
+          new THREE.MeshBasicMaterial({
+            map:tex
+          })
+
+        );
+
+      decal.position.set(
+        side*1.17,
+        0.65,
+        0.5
+      );
+
+      decal.rotation.y =
+        side*Math.PI/2;
+
+      policeGroup.add(decal);
+
+    }
+
+  }
+
+
+  /* =====================================================
+     RETRO RED
+  ===================================================== */
+
+  if(style.retro){
+
+    const turbMat =
+      new THREE.MeshStandardMaterial({
+
+        color:0x111111,
+
+        metalness:1,
+
+        roughness:0.2,
+
+        emissive:0x00aaff,
+
+        emissiveIntensity:0.6
+
+      });
+
+
+    for(
+      const tx of [
+        -1.1,
+        -0.4,
+        0.4,
+        1.1
+      ]
+    ){
+
+      const turb =
+        new THREE.Mesh(
+
+          new THREE.CylinderGeometry(
+            0.28,
+            0.32,
+            0.7,
+            14
+          ),
+
+          turbMat
+
+        );
+
+      turb.rotation.x =
+        Math.PI/2;
+
+      turb.position.set(
+        tx,
+        0.65,
+        -2.55
+      );
+
+      turb.userData.isTurbine =
+        true;
+
+      turbineGroup.add(turb);
+
+
+      const core =
+        new THREE.Mesh(
+
+          new THREE.CircleGeometry(
+            0.22,
+            12
+          ),
+
+          new THREE.MeshBasicMaterial({
+            color:0x00aaff
+          })
+
+        );
+
+      core.position.set(
+        tx,
+        0.65,
+        -2.92
+      );
+
+      core.rotation.y =
+        Math.PI;
+
+      turbineGroup.add(core);
+
+    }
+
 
     const wingMat =
       new THREE.MeshStandardMaterial({
+
         color:style.body,
-        metalness:.9,
-        roughness:.3,
+
+        metalness:0.9,
+
+        roughness:0.3,
+
         emissive:style.neon,
-        emissiveIntensity:.3
+
+        emissiveIntensity:0.3
+
       });
 
-    for(const side of [-1,1]){
+
+    for(
+      const side of [-1,1]
+    ){
 
       const wing =
         new THREE.Mesh(
+
           new THREE.BoxGeometry(
-            1.5,.09,.7
+            1.8,
+            0.1,
+            0.9
           ),
+
           wingMat
+
+        );
+
+      wing.position.set(
+        side*1.7,
+        1.25,
+        -2.2
+      );
+
+      wing.rotation.z =
+        side*0.32;
+
+      wingGroup.add(wing);
+
+
+      const tip =
+        new THREE.Mesh(
+
+          new THREE.BoxGeometry(
+            0.12,
+            0.4,
+            0.7
+          ),
+
+          new THREE.MeshBasicMaterial({
+            color:style.neon
+          })
+
+        );
+
+      tip.position.set(
+        side*2.55,
+        1.3,
+        -2.2
+      );
+
+      wingGroup.add(tip);
+
+    }
+
+
+    const ventMat =
+      new THREE.MeshStandardMaterial({
+
+        color:0x0a0a0a,
+
+        metalness:1,
+
+        roughness:0.5
+
+      });
+
+
+    for(let i=0;i<4;i++){
+
+      const vent =
+        new THREE.Mesh(
+
+          new THREE.BoxGeometry(
+            1.6,
+            0.05,
+            0.08
+          ),
+
+          ventMat
+
+        );
+
+      vent.position.set(
+        0,
+        0.62,
+        2.2+i*0.15
+      );
+
+      bodyGroup.add(vent);
+
+    }
+
+  }
+
+
+  /* =====================================================
+     КРЫЛЬЯ
+  ===================================================== */
+
+  if(
+    style.wings &&
+    !style.retro
+  ){
+
+    const wingMat =
+      new THREE.MeshStandardMaterial({
+
+        color:style.body,
+
+        metalness:0.9,
+
+        roughness:0.3,
+
+        emissive:style.neon,
+
+        emissiveIntensity:0.3
+
+      });
+
+
+    for(
+      const side of [-1,1]
+    ){
+
+      const wing =
+        new THREE.Mesh(
+
+          new THREE.BoxGeometry(
+            1.5,
+            0.09,
+            0.7
+          ),
+
+          wingMat
+
         );
 
       wing.position.set(
@@ -1492,16 +3091,24 @@ function buildCar(style){
       );
 
       wing.rotation.z =
-        side*.28;
+        side*0.28;
 
       wingGroup.add(wing);
 
+
       const tip =
         new THREE.Mesh(
+
           new THREE.BoxGeometry(
-            .1,.35,.55
+            0.1,
+            0.35,
+            0.55
           ),
-          neonMat
+
+          new THREE.MeshBasicMaterial({
+            color:style.neon
+          })
+
         );
 
       tip.position.set(
@@ -1511,103 +3118,148 @@ function buildCar(style){
       );
 
       wingGroup.add(tip);
+
     }
+
   }
 
-  /* TURBINES */
 
-  const turbMat =
-    new THREE.MeshStandardMaterial({
-      color:0x222228,
-      metalness:1,
-      roughness:.15,
-      emissive:style.neon,
-      emissiveIntensity:.7
-    });
+  /* =====================================================
+     ТУРБИНЫ
+  ===================================================== */
 
-  const positions=[
-    [0,1.15,-2.55],
-    [0,.6,-2.7],
-    [-.75,.75,-2.5],
-    [.75,.75,-2.5]
-  ];
+  if(!style.retro){
 
-  const count =
-    Math.min(
-      style.turbines,
-      positions.length
-    );
+    const turbMat =
+      new THREE.MeshStandardMaterial({
 
-  for(
-    let i=0;
-    i<count;
-    i++
-  ){
+        color:0x222228,
 
-    const p=positions[i];
+        metalness:1,
 
-    const turbine =
-      new THREE.Mesh(
-        new THREE.CylinderGeometry(
-          .24,.3,.55,14
-        ),
-        turbMat
+        roughness:0.15,
+
+        emissive:style.neon,
+
+        emissiveIntensity:0.7
+
+      });
+
+
+    const positions = [
+
+      [0,1.15,-2.55],
+
+      [0,0.6,-2.7],
+
+      [-0.75,0.75,-2.5],
+
+      [0.75,0.75,-2.5]
+
+    ];
+
+
+    const count =
+      Math.min(
+        style.turbines,
+        positions.length
       );
 
-    /*
-      Исправлено:
-      цилиндр направлен вдоль Z,
-      поэтому вращаем по Z.
-    */
 
-    turbine.rotation.x=
-      Math.PI/2;
+    for(
+      let i=0;
+      i<count;
+      i++
+    ){
 
-    turbine.position.set(
-      p[0],
-      p[1],
-      p[2]
-    );
+      const p =
+        positions[i];
 
-    turbineGroup.add(turbine);
 
-    const core =
-      new THREE.Mesh(
-        new THREE.CircleGeometry(
-          .18,12
-        ),
-        new THREE.MeshBasicMaterial({
-          color:style.neon
-        })
+      const turbine =
+        new THREE.Mesh(
+
+          new THREE.CylinderGeometry(
+            0.24,
+            0.3,
+            0.55,
+            14
+          ),
+
+          turbMat
+
+        );
+
+      turbine.rotation.x =
+        Math.PI/2;
+
+      turbine.position.set(
+        p[0],
+        p[1],
+        p[2]
       );
 
-    core.position.set(
-      p[0],
-      p[1],
-      p[2]-.28
-    );
+      turbine.userData.isTurbine =
+        true;
 
-    core.rotation.y=
-      Math.PI;
+      turbineGroup.add(turbine);
 
-    turbineGroup.add(core);
+
+      const core =
+        new THREE.Mesh(
+
+          new THREE.CircleGeometry(
+            0.18,
+            12
+          ),
+
+          new THREE.MeshBasicMaterial({
+            color:style.neon
+          })
+
+        );
+
+      core.position.set(
+        p[0],
+        p[1],
+        p[2]-0.28
+      );
+
+      core.rotation.y =
+        Math.PI;
+
+      turbineGroup.add(core);
+
+    }
+
   }
 
-  /* ROBOTIC */
+
+  /* =====================================================
+     ROBOTIC
+  ===================================================== */
 
   const ribCount =
     Math.floor(
       style.robotic*7
     );
 
+
   const ribMat =
     new THREE.MeshStandardMaterial({
+
       color:0x1a1a20,
+
       metalness:1,
-      roughness:.3,
+
+      roughness:0.3,
+
       emissive:style.neon,
-      emissiveIntensity:.4
+
+      emissiveIntensity:0.4
+
     });
+
 
   for(
     let i=0;
@@ -1617,97 +3269,114 @@ function buildCar(style){
 
     const rib =
       new THREE.Mesh(
+
         new THREE.BoxGeometry(
-          2.4,.06,.18
+          2.4,
+          0.06,
+          0.18
         ),
+
         ribMat
+
       );
 
     rib.position.set(
       0,
-      .78,
-      -1.6+i*.32
+      0.78,
+      -1.6+i*0.32
     );
 
     roboticGroup.add(rib);
+
   }
 
-  /* WHEELS */
 
-  const wheelMat =
-    new THREE.MeshStandardMaterial({
-      color:0x080808,
-      metalness:.7,
-      roughness:.5
-    });
+  /* =====================================================
+     КОЛЁСА
+  ===================================================== */
 
-  const rimMat =
-    new THREE.MeshBasicMaterial({
-      color:style.neon
-    });
+  const wheelPositions = [
 
-  const wheelGeo =
-    new THREE.CylinderGeometry(
-      .48,.48,.36,16
-    );
+    [-1.15,1.55],
+    [1.15,1.55],
+    [-1.15,-1.55],
+    [1.15,-1.55]
 
-  const rimGeo =
-    new THREE.TorusGeometry(
-      .28,.05,8,16
-    );
+  ];
+
 
   for(
-    const [x,z]
-    of [
-      [-1.15,1.55],
-      [1.15,1.55],
-      [-1.15,-1.55],
-      [1.15,-1.55]
-    ]
+    const [x,z] of wheelPositions
   ){
 
     const wheel =
       new THREE.Mesh(
-        wheelGeo,
-        wheelMat
+
+        new THREE.CylinderGeometry(
+          0.48,
+          0.48,
+          0.36,
+          16
+        ),
+
+        new THREE.MeshStandardMaterial({
+
+          color:0x080808,
+
+          metalness:0.7,
+
+          roughness:0.5
+
+        })
+
       );
 
-    wheel.rotation.z=
+    wheel.rotation.z =
       Math.PI/2;
 
     wheel.position.set(
-      x,.48,z
+      x,
+      0.48,
+      z
     );
 
-    /*
-      Помечаем колесо,
-      чтобы не проверять
-      geometry.type каждый кадр.
-    */
-
-    wheel.userData.isWheel=true;
+    wheel.userData.isWheel =
+      true;
 
     wheelsGroup.add(wheel);
 
+
     const rim =
       new THREE.Mesh(
-        rimGeo,
-        rimMat
+
+        new THREE.TorusGeometry(
+          0.28,
+          0.05,
+          8,
+          16
+        ),
+
+        new THREE.MeshBasicMaterial({
+          color:style.neon
+        })
+
       );
 
-    rim.rotation.y=
+    rim.rotation.y =
       Math.PI/2;
 
     rim.position.set(
-      x+Math.sign(x)*.18,
-      .48,
+      x+Math.sign(x)*0.18,
+      0.48,
       z
     );
 
     wheelsGroup.add(rim);
+
   }
 
-  /* LIGHT COLOR */
+
+  /* Цвет подсветки */
 
   underglow.color.set(
     style.neon
@@ -1721,14 +3390,16 @@ function buildCar(style){
     style.neon
   );
 
+
   document.getElementById(
     "styleName"
-  ).textContent=style.name;
+  ).textContent =
+    style.name;
 
-  showToast(
-    style.name
-  );
+  showToast(style.name);
+
 }
+
 
 function showToast(text){
 
@@ -1737,36 +3408,48 @@ function showToast(text){
       "toast"
     );
 
-  toast.textContent=text;
-  toast.style.opacity=1;
+  toast.textContent =
+    text;
+
+  toast.style.opacity =
+    1;
 
   clearTimeout(
     toast._timer
   );
 
-  toast._timer=
-    setTimeout(()=>{
-      toast.style.opacity=0;
-    },900);
+  toast._timer =
+    setTimeout(
+      ()=>{
+        toast.style.opacity=0;
+      },
+      900
+    );
+
 }
+
 
 buildCar(
   carStyles[currentStyle]
 );
 
+
 /* =========================================================
-   GAME STATE
+   УПРАВЛЕНИЕ
 ========================================================= */
 
-const input={
+const input = {
+
   forward:false,
   back:false,
   left:false,
   right:false,
   nitro:false
+
 };
 
-const carState={
+
+const carState = {
 
   speed:0,
 
@@ -1795,93 +3478,39 @@ const carState={
   boosting:false,
 
   drift:0
+
 };
 
-/* =========================================================
-   AUDIO
-========================================================= */
 
-let audioCtx=null;
-
-function initAudio(){
-
-  if(!audioCtx){
-
-    audioCtx=
-      new (
-        window.AudioContext ||
-        window.webkitAudioContext
-      )();
-  }
-
-  if(audioCtx.state==="suspended"){
-    audioCtx.resume();
-  }
-}
-
-function playHorn(){
-
-  initAudio();
-
-  const o1=
-    audioCtx.createOscillator();
-
-  const o2=
-    audioCtx.createOscillator();
-
-  const gain=
-    audioCtx.createGain();
-
-  o1.type="sawtooth";
-  o2.type="sawtooth";
-
-  o1.frequency.value=220;
-  o2.frequency.value=277;
-
-  gain.gain.value=.0001;
-
-  o1.connect(gain);
-  o2.connect(gain);
-
-  gain.connect(
-    audioCtx.destination
-  );
-
-  o1.start();
-  o2.start();
-
-  const now=
-    audioCtx.currentTime;
-
-  gain.gain.exponentialRampToValueAtTime(
-    .12,
-    now+.03
-  );
-
-  gain.gain.exponentialRampToValueAtTime(
-    .0001,
-    now+.5
-  );
-
-  o1.stop(now+.55);
-  o2.stop(now+.55);
-}
-
-/* =========================================================
-   POINTER CONTROLS
-   Исправлено для iPhone + iPad + PC
-========================================================= */
-
-const activePointers=
+const activePointers =
   new Map();
+
 
 function bindHold(
   id,
   property
 ){
 
-  const el=
+  const el =
     document.getElementById(id);
+
+
+  const release =
+    e=>{
+
+      activePointers.delete(
+        e.pointerId
+      );
+
+      input[property] =
+        false;
+
+      el.classList.remove(
+        "on"
+      );
+
+    };
+
 
   el.addEventListener(
     "pointerdown",
@@ -1901,46 +3530,40 @@ function bindHold(
       input[property]=true;
 
       el.classList.add("on");
+
     },
-    {passive:false}
+    {
+      passive:false
+    }
   );
 
-  const release=e=>{
-
-    e.preventDefault();
-
-    activePointers.delete(
-      e.pointerId
-    );
-
-    input[property]=false;
-
-    if(
-      ![...activePointers.values()]
-        .includes(id)
-    ){
-      el.classList.remove("on");
-    }
-  };
 
   el.addEventListener(
     "pointerup",
     release,
-    {passive:false}
+    {
+      passive:false
+    }
   );
 
   el.addEventListener(
     "pointercancel",
     release,
-    {passive:false}
+    {
+      passive:false
+    }
   );
 
   el.addEventListener(
     "lostpointercapture",
     release,
-    {passive:false}
+    {
+      passive:false
+    }
   );
+
 }
+
 
 bindHold(
   "btnLeft",
@@ -1967,7 +3590,8 @@ bindHold(
   "nitro"
 );
 
-/* JUMP */
+
+/* Прыжок */
 
 function doJump(){
 
@@ -1975,12 +3599,16 @@ function doJump(){
     !carState.airborne
   ){
 
-    carState.airborne=true;
+    carState.airborne =
+      true;
 
-    carState.verticalVel=24;
+    carState.verticalVel =
+      24;
 
   }
+
 }
+
 
 document
   .getElementById("btnJump")
@@ -2004,11 +3632,185 @@ document
         },
         120
       );
+
     },
-    {passive:false}
+    {
+      passive:false
+    }
   );
 
-/* HORN */
+
+/* Камера */
+
+let camMode = 0;
+
+function nextCamera(){
+
+  camMode =
+    (camMode+1)%3;
+
+  showToast(
+    camMode===0
+    ?
+    "CHASE"
+    :
+    camMode===1
+    ?
+    "COCKPIT"
+    :
+    "FAR"
+  );
+
+}
+
+
+document
+  .getElementById("btnCam")
+  .addEventListener(
+    "pointerdown",
+    e=>{
+
+      e.preventDefault();
+
+      nextCamera();
+
+    },
+    {
+      passive:false
+    }
+  );
+
+
+/* Стиль */
+
+document
+  .getElementById("btnStyle")
+  .addEventListener(
+    "pointerdown",
+    e=>{
+
+      e.preventDefault();
+
+      currentStyle =
+        (currentStyle+1) %
+        carStyles.length;
+
+      buildCar(
+        carStyles[currentStyle]
+      );
+
+    },
+    {
+      passive:false
+    }
+  );
+
+
+/* =========================================================
+   АУДИО
+========================================================= */
+
+let audioCtx = null;
+
+
+function initAudio(){
+
+  if(!audioCtx){
+
+    audioCtx =
+      new (
+        window.AudioContext ||
+        window.webkitAudioContext
+      )();
+
+  }
+
+
+  if(
+    audioCtx.state ===
+    "suspended"
+  ){
+
+    audioCtx.resume();
+
+  }
+
+}
+
+
+function playHorn(){
+
+  initAudio();
+
+
+  const o1 =
+    audioCtx.createOscillator();
+
+  const o2 =
+    audioCtx.createOscillator();
+
+  const gain =
+    audioCtx.createGain();
+
+
+  o1.type =
+    "sawtooth";
+
+  o2.type =
+    "sawtooth";
+
+
+  o1.frequency.value =
+    220;
+
+  o2.frequency.value =
+    277;
+
+
+  gain.gain.value =
+    0.0001;
+
+
+  o1.connect(gain);
+  o2.connect(gain);
+
+  gain.connect(
+    audioCtx.destination
+  );
+
+
+  o1.start();
+  o2.start();
+
+
+  const now =
+    audioCtx.currentTime;
+
+
+  gain.gain
+    .exponentialRampToValueAtTime(
+      0.12,
+      now+0.03
+    );
+
+
+  gain.gain
+    .exponentialRampToValueAtTime(
+      0.0001,
+      now+0.5
+    );
+
+
+  o1.stop(
+    now+0.55
+  );
+
+  o2.stop(
+    now+0.55
+  );
+
+}
+
 
 document
   .getElementById("btnHorn")
@@ -2021,82 +3823,75 @@ document
       playHorn();
 
     },
-    {passive:false}
+    {
+      passive:false
+    }
   );
 
-/* STYLE */
-
-document
-  .getElementById("btnStyle")
-  .addEventListener(
-    "pointerdown",
-    e=>{
-
-      e.preventDefault();
-
-      currentStyle=
-        (
-          currentStyle+1
-        )%
-        carStyles.length;
-
-      buildCar(
-        carStyles[
-          currentStyle
-        ]
-      );
-    },
-    {passive:false}
-  );
-
-/* CAMERA */
-
-let camMode=0;
-
-document
-  .getElementById("btnCam")
-  .addEventListener(
-    "pointerdown",
-    e=>{
-
-      e.preventDefault();
-
-      camMode=
-        (camMode+1)%3;
-
-      showToast(
-        camMode===0
-        ? "CHASE"
-        : camMode===1
-        ? "COCKPIT"
-        : "FAR"
-      );
-    },
-    {passive:false}
-  );
 
 /* =========================================================
-   KEYBOARD
+   КЛАВИАТУРА
 ========================================================= */
 
 addEventListener(
   "keydown",
   e=>{
 
-    if(e.code==="KeyW")
+    if(
+      [
+        "KeyW",
+        "KeyS",
+        "KeyA",
+        "KeyD",
+        "ArrowUp",
+        "ArrowDown",
+        "ArrowLeft",
+        "ArrowRight",
+        "ShiftLeft",
+        "ShiftRight",
+        "Space"
+      ].includes(e.code)
+    ){
+
+      e.preventDefault();
+
+    }
+
+
+    if(
+      e.code==="KeyW" ||
+      e.code==="ArrowUp"
+    )
       input.forward=true;
 
-    if(e.code==="KeyS")
+
+    if(
+      e.code==="KeyS" ||
+      e.code==="ArrowDown"
+    )
       input.back=true;
 
-    if(e.code==="KeyA")
+
+    if(
+      e.code==="KeyA" ||
+      e.code==="ArrowLeft"
+    )
       input.left=true;
 
-    if(e.code==="KeyD")
+
+    if(
+      e.code==="KeyD" ||
+      e.code==="ArrowRight"
+    )
       input.right=true;
 
-    if(e.code==="ShiftLeft")
+
+    if(
+      e.code==="ShiftLeft" ||
+      e.code==="ShiftRight"
+    )
       input.nitro=true;
+
 
     if(
       e.code==="Space" &&
@@ -2104,56 +3899,132 @@ addEventListener(
     )
       doJump();
 
+
     if(
       e.code==="KeyH" &&
       !e.repeat
     )
       playHorn();
 
+
     if(
       e.code==="KeyC" &&
       !e.repeat
     )
-      camMode=(camMode+1)%3;
+      nextCamera();
+
+
+    if(
+      e.code==="KeyR" &&
+      !e.repeat
+    ){
+
+      currentStyle =
+        (currentStyle+1) %
+        carStyles.length;
+
+      buildCar(
+        carStyles[currentStyle]
+      );
+
+    }
 
   }
 );
+
 
 addEventListener(
   "keyup",
   e=>{
 
-    if(e.code==="KeyW")
+    if(
+      e.code==="KeyW" ||
+      e.code==="ArrowUp"
+    )
       input.forward=false;
 
-    if(e.code==="KeyS")
+
+    if(
+      e.code==="KeyS" ||
+      e.code==="ArrowDown"
+    )
       input.back=false;
 
-    if(e.code==="KeyA")
+
+    if(
+      e.code==="KeyA" ||
+      e.code==="ArrowLeft"
+    )
       input.left=false;
 
-    if(e.code==="KeyD")
+
+    if(
+      e.code==="KeyD" ||
+      e.code==="ArrowRight"
+    )
       input.right=false;
 
-    if(e.code==="ShiftLeft")
+
+    if(
+      e.code==="ShiftLeft" ||
+      e.code==="ShiftRight"
+    )
       input.nitro=false;
 
   }
 );
 
+
+/* Сброс управления */
+
+addEventListener(
+  "blur",
+  ()=>{
+
+    for(
+      const key of Object.keys(input)
+    )
+      input[key]=false;
+
+
+    activePointers.clear();
+
+
+    document
+      .querySelectorAll(
+        ".pad,.pad-sm"
+      )
+      .forEach(
+        el=>
+          el.classList.remove("on")
+      );
+
+  }
+);
+
+
 /* =========================================================
-   SKID MARKS
+   СЛЕДЫ ШИН
 ========================================================= */
 
-const skidMarks=[];
+const skidMarks = [];
 
 const skidMat =
   new THREE.MeshBasicMaterial({
+
     color:0x00ffff,
+
     transparent:true,
-    opacity:.45,
+
+    opacity:0.45,
+
     side:THREE.DoubleSide
+
   });
+
+
+let skidTimer = 0;
+
 
 function spawnSkid(
   x,
@@ -2162,198 +4033,324 @@ function spawnSkid(
 ){
 
   if(
-    Math.random()>.35
-  ) return;
+    Math.random()>0.35
+  )
+    return;
+
 
   const mesh =
     new THREE.Mesh(
+
       new THREE.PlaneGeometry(
-        .32,.32
+        0.32,
+        0.32
       ),
-      skidMat.clone()
+
+      skidMat
+
     );
 
-  mesh.rotation.x=
+
+  mesh.rotation.x =
     -Math.PI/2;
 
-  mesh.rotation.z=
+  mesh.rotation.z =
     heading;
 
+
   mesh.position.set(
-    x,.021,z
+    x,
+    0.021,
+    z
   );
+
 
   scene.add(mesh);
 
+
   skidMarks.push({
-    mesh,
+
+    mesh:mesh,
+
     life:1.5
+
   });
 
+
   if(
-    skidMarks.length>150
+    skidMarks.length>120
   ){
 
-    const old=
+    const old =
       skidMarks.shift();
 
     scene.remove(
       old.mesh
     );
 
-    old.mesh.geometry.dispose();
-    old.mesh.material.dispose();
   }
+
 }
 
+
 /* =========================================================
-   CAR PHYSICS
+   КОЛЛИЗИИ
+========================================================= */
+
+function resolveBuildingCollisions(){
+
+  if(
+    carState.airborne
+  )
+    return;
+
+
+  for(
+    const c of collidables
+  ){
+
+    const dx =
+      car.position.x-c.x;
+
+    const dz =
+      car.position.z-c.z;
+
+
+    const overlapX =
+      c.w-Math.abs(dx);
+
+    const overlapZ =
+      c.d-Math.abs(dz);
+
+
+    if(
+      overlapX>0 &&
+      overlapZ>0
+    ){
+
+      if(
+        overlapX<overlapZ
+      ){
+
+        const dir =
+          dx===0
+          ?
+          1
+          :
+          Math.sign(dx);
+
+
+        car.position.x +=
+          dir*overlapX;
+
+        carState.heading +=
+          dir*0.08;
+
+      }
+      else{
+
+        const dir =
+          dz===0
+          ?
+          1
+          :
+          Math.sign(dz);
+
+
+        car.position.z +=
+          dir*overlapZ;
+
+        carState.heading -=
+          dir*0.08;
+
+      }
+
+
+      carState.speed *=
+        0.25;
+
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   ФИЗИКА
 ========================================================= */
 
 function updateCar(dt){
 
-  const forward=
-    (input.forward?1:0)-
+  const forward =
+    (input.forward?1:0) -
     (input.back?1:0);
 
-  const steerInput=
-    (input.left?1:0)-
+
+  const steerInput =
+    (input.left?1:0) -
     (input.right?1:0);
 
-  carState.boosting=
+
+  carState.boosting =
     input.nitro &&
     carState.nitro>0 &&
     carState.speed>5;
 
-  const targetMax=
+
+  const targetMax =
     carState.boosting
-    ?carState.boostSpeed
-    :carState.maxSpeed;
+    ?
+    carState.boostSpeed
+    :
+    carState.maxSpeed;
 
-  /* ACCELERATION */
 
-  if(forward>0){
+  /* Разгон */
+
+  if(
+    forward>0
+  ){
 
     carState.speed +=
       carState.accel*
       dt*
       (
         carState.boosting
-        ?2.1
-        :1
+        ?
+        2.1
+        :
+        1
       );
 
-  }else if(forward<0){
+  }
+  else if(
+    forward<0
+  ){
 
     carState.speed -=
-      carState.brake*
-      dt;
+      carState.brake*dt;
 
-  }else{
+  }
+  else{
 
-    const amount=
+    const amount =
       carState.friction*dt;
 
-    if(carState.speed>0){
 
-      carState.speed=
+    if(
+      carState.speed>0
+    ){
+
+      carState.speed =
         Math.max(
           0,
           carState.speed-amount
         );
 
-    }else if(
+    }
+    else if(
       carState.speed<0
     ){
 
-      carState.speed=
+      carState.speed =
         Math.min(
           0,
           carState.speed+amount
         );
+
     }
+
   }
 
-  carState.speed=
+
+  carState.speed =
     THREE.MathUtils.clamp(
       carState.speed,
       -35,
       targetMax
     );
 
-  /* NITRO */
+
+  /* Нитро */
 
   if(
     carState.boosting
   ){
 
-    carState.nitro=
+    carState.nitro =
       Math.max(
         0,
-        carState.nitro-
-        32*dt
+        carState.nitro-32*dt
       );
 
-  }else{
+  }
+  else{
 
-    carState.nitro=
+    carState.nitro =
       Math.min(
         100,
-        carState.nitro+
-        14*dt
+        carState.nitro+14*dt
       );
+
   }
 
-  /* STEERING */
 
-  const steerFactor=
+  /* Руль */
+
+  const steerFactor =
     THREE.MathUtils.clamp(
-      Math.abs(carState.speed)/25,
+      Math.abs(
+        carState.speed
+      )/25,
       0,
       1
     );
 
-  /*
-    Дрифт:
-    чем выше скорость и
-    сильнее поворот,
-    тем сильнее скольжение.
-  */
 
-  const targetDrift=
-    Math.abs(steerInput)*
-    steerFactor;
+  const targetDrift =
+    Math.abs(
+      steerInput
+    )*steerFactor;
+
 
   carState.drift +=
     (
-      targetDrift-
+      targetDrift -
       carState.drift
-    )*
+    ) *
     Math.min(
       1,
       dt*7
     );
 
+
   carState.heading +=
-    steerInput*
-    carState.steer*
-    steerFactor*
-    dt*
+    steerInput *
+    carState.steer *
+    steerFactor *
+    dt *
     (
       carState.speed>=0
-      ?1
-      :-1
+      ?
+      1
+      :
+      -1
     );
 
-  /* JUMP */
 
-  if(carState.airborne){
+  /* Прыжок */
+
+  if(
+    carState.airborne
+  ){
 
     carState.verticalVel -=
       26*dt;
 
     carState.y +=
       carState.verticalVel*dt;
+
 
     if(
       carState.y<=0
@@ -2367,131 +4364,206 @@ function updateCar(dt){
 
     }
 
+
     carState.speed *=
       Math.max(
         0,
-        1-.35*dt
+        1-0.35*dt
       );
+
   }
 
-  /* MOVE */
+
+  /* Позиция */
 
   car.position.x +=
     Math.sin(
       carState.heading
-    )*
-    carState.speed*
+    ) *
+    carState.speed *
     dt;
+
 
   car.position.z +=
     Math.cos(
       carState.heading
-    )*
-    carState.speed*
+    ) *
+    carState.speed *
     dt;
 
-  car.position.y=
+
+  car.position.y =
     carState.y;
 
-  /* ROTATION */
 
-  const targetRoll=
+  /* Наклон */
+
+  const targetRoll =
     -steerInput*
-    .2*
+    0.2*
     steerFactor;
+
 
   car.rotation.z +=
     (
       targetRoll-
       car.rotation.z
-    )*
+    ) *
     Math.min(
       1,
       8*dt
     );
 
-  car.rotation.y=
+
+  car.rotation.y =
     carState.heading;
 
-  const targetPitch=
+
+  const targetPitch =
     carState.airborne
-    ?-carState.verticalVel*.014
-    :0;
+    ?
+    -carState.verticalVel*
+    0.014
+    :
+    0;
+
 
   car.rotation.x +=
     (
       targetPitch-
       car.rotation.x
-    )*
+    ) *
     Math.min(
       1,
       5*dt
     );
 
-  /* BRAKE LIGHTS */
 
-  const braking=
+  /* Тормоза */
+
+  const braking =
     input.back &&
     carState.speed>2;
 
-  const targetBrake=
-    braking?8:0;
+
+  const targetBrake =
+    braking
+    ?
+    8
+    :
+    0;
+
 
   brakeLightL.intensity +=
     (
-      targetBrake-
+      targetBrake -
       brakeLightL.intensity
-    )*
+    ) *
     Math.min(
       1,
       dt*12
     );
 
-  brakeLightR.intensity=
+
+  brakeLightR.intensity =
     brakeLightL.intensity;
 
-  /* SKID */
+
+  /* Полиция */
 
   if(
-    carState.drift>.25 &&
-    Math.abs(carState.speed)>25 &&
-    !carState.airborne
+    carStyles[currentStyle].police
   ){
 
-    const bx=
-      car.position.x-
+    const t =
+      performance.now()*0.005;
+
+    const phase =
+      Math.sin(t);
+
+
+    policeLightL.intensity =
+      phase>0 ? 5 : 0;
+
+    policeLightR.intensity =
+      phase>0 ? 0 : 5;
+
+  }
+  else{
+
+    policeLightL.intensity=0;
+    policeLightR.intensity=0;
+
+  }
+
+
+  /* Следы */
+
+  skidTimer -= dt;
+
+
+  if(
+    carState.drift>0.25 &&
+    Math.abs(carState.speed)>25 &&
+    !carState.airborne &&
+    skidTimer<=0
+  ){
+
+    const bx =
+      car.position.x -
       Math.sin(
         carState.heading
       )*1.55;
 
-    const bz=
-      car.position.z-
+
+    const bz =
+      car.position.z -
       Math.cos(
         carState.heading
       )*1.55;
 
-    spawnSkid(
-      bx-
-      Math.cos(carState.heading)*1.15,
-
-      bz+
-      Math.sin(carState.heading)*1.15,
-
-      carState.heading
-    );
 
     spawnSkid(
-      bx+
-      Math.cos(carState.heading)*1.15,
 
-      bz-
-      Math.sin(carState.heading)*1.15,
+      bx -
+      Math.cos(
+        carState.heading
+      )*1.15,
+
+      bz +
+      Math.sin(
+        carState.heading
+      )*1.15,
 
       carState.heading
+
     );
+
+
+    spawnSkid(
+
+      bx +
+      Math.cos(
+        carState.heading
+      )*1.15,
+
+      bz -
+      Math.sin(
+        carState.heading
+      )*1.15,
+
+      carState.heading
+
+    );
+
+
+    skidTimer =
+      0.045;
+
   }
 
-  /* UPDATE SKIDS */
+
+  /* Удаление старых следов */
 
   for(
     let i=skidMarks.length-1;
@@ -2499,16 +4571,18 @@ function updateCar(dt){
     i--
   ){
 
-    const s=
+    const s =
       skidMarks[i];
 
-    s.life-=dt;
+    s.life -= dt;
 
-    s.mesh.material.opacity=
+
+    s.mesh.material.opacity =
       Math.max(
         0,
         s.life/1.5
-      )*.45;
+      )*0.45;
+
 
     if(
       s.life<=0
@@ -2518,164 +4592,112 @@ function updateCar(dt){
         s.mesh
       );
 
-      s.mesh.geometry.dispose();
-      s.mesh.material.dispose();
-
       skidMarks.splice(
         i,
         1
       );
+
     }
+
   }
 
-  /* =====================================================
-     BUILDING COLLISIONS
-  ===================================================== */
 
-  if(!carState.airborne){
+  /* Коллизии */
 
-    for(
-      const c of collidables
-    ){
+  resolveBuildingCollisions();
 
-      const dx=
-        car.position.x-c.x;
 
-      const dz=
-        car.position.z-c.z;
-
-      const overlapX=
-        c.w-
-        Math.abs(dx);
-
-      const overlapZ=
-        c.d-
-        Math.abs(dz);
-
-      if(
-        overlapX>0 &&
-        overlapZ>0
-      ){
-
-        if(
-          overlapX<overlapZ
-        ){
-
-          const dir=
-            dx===0
-            ?1
-            :Math.sign(dx);
-
-          car.position.x +=
-            dir*overlapX;
-
-        }else{
-
-          const dir=
-            dz===0
-            ?1
-            :Math.sign(dz);
-
-          car.position.z +=
-            dir*overlapZ;
-        }
-
-        carState.speed*=.25;
-      }
-    }
-  }
-
-  /* =====================================================
-     WHEEL ROTATION
-  ===================================================== */
+  /* Колёса */
 
   wheelsGroup.children
-    .forEach(obj=>{
+    .forEach(
+      obj=>{
 
-      if(
-        obj.userData.isWheel
-      ){
+        if(
+          obj.userData.isWheel
+        ){
 
-        /*
-          Исправленная ось вращения.
-        */
+          obj.rotation.x +=
+            carState.speed*
+            dt*
+            2.2;
 
-        obj.rotation.x +=
-          carState.speed*
-          dt*
-          2.2;
+        }
+
       }
-    });
+    );
 
-  /* =====================================================
-     TURBINES
-  ===================================================== */
+
+  /* Турбины */
 
   turbineGroup.children
-    .forEach(obj=>{
+    .forEach(
+      obj=>{
 
-      if(
-        obj.geometry &&
-        obj.geometry.type===
-        "CylinderGeometry"
-      ){
+        if(
+          obj.userData.isTurbine
+        ){
 
-        obj.rotation.z +=
-          dt*
-          (
-            8+
-            Math.abs(
-              carState.speed
-            )*.35
-          );
+          obj.rotation.z +=
+            dt*
+            (
+              8+
+              Math.abs(
+                carState.speed
+              )*.35
+            );
+
+        }
+
       }
-    });
+    );
 
-  /* =====================================================
-     NEON PULSE
-  ===================================================== */
 
-  const time=
-    performance.now()*.005;
+  /* Подсветка */
 
-  const pulse=
+  const time =
+    performance.now()*0.005;
+
+
+  const pulse =
     7+
     Math.sin(time)*2+
     Math.abs(
       carState.speed
-    )*.055;
+    )*0.055;
 
-  underglow.intensity=
-    pulse;
 
-  underglow2.intensity=
-    pulse;
+  underglow.intensity =
+    pulse*
+    (
+      carState.boosting
+      ?
+      1.6
+      :
+      1
+    );
 
-  underglow3.intensity=
-    pulse*.55;
 
-  /*
-    Нитро визуально усиливает подсветку.
-  */
+  underglow2.intensity =
+    underglow.intensity;
 
-  if(
-    carState.boosting
-  ){
 
-    underglow.intensity*=1.6;
-    underglow2.intensity*=1.6;
-  }
+  underglow3.intensity =
+    underglow.intensity*0.55;
+
 }
 
+
 /* =========================================================
-   CAMERA
+   КАМЕРА
 ========================================================= */
 
-const camPos=
+const camPos =
   new THREE.Vector3();
 
-const camTarget=
+const camTarget =
   new THREE.Vector3();
+
 
 function updateCamera(dt){
 
@@ -2683,34 +4705,44 @@ function updateCamera(dt){
   let height;
   let look;
 
-  if(camMode===0){
+
+  if(
+    camMode===0
+  ){
 
     back=-10;
     height=4.5;
     look=10;
 
-  }else if(camMode===1){
+  }
+  else if(
+    camMode===1
+  ){
 
-    back=-.3;
+    back=-0.3;
     height=1.4;
     look=8;
 
-  }else{
+  }
+  else{
 
     back=-16;
     height=7;
     look=12;
+
   }
 
-  const sinH=
+
+  const sinH =
     Math.sin(
       carState.heading
     );
 
-  const cosH=
+  const cosH =
     Math.cos(
       carState.heading
     );
+
 
   camPos.set(
 
@@ -2722,7 +4754,9 @@ function updateCamera(dt){
 
     car.position.z+
     cosH*back
+
   );
+
 
   camTarget.set(
 
@@ -2734,171 +4768,75 @@ function updateCamera(dt){
 
     car.position.z+
     cosH*look
+
   );
 
-  /*
-    Плавная камера.
-  */
 
-  const smooth=
+  const smooth =
     camMode===1
-    ?1
-    :1-Math.pow(
-      .0015,
+    ?
+    1
+    :
+    1-
+    Math.pow(
+      0.0015,
       dt
     );
+
 
   camera.position.lerp(
     camPos,
     smooth
   );
 
+
   camera.lookAt(
     camTarget
   );
 
-  const targetFov=
+
+  const targetFov =
     72+
     Math.abs(
       carState.speed
-    )*.25+
+    )*0.25+
     (
       carState.boosting
-      ?14
-      :0
+      ?
+      14
+      :
+      0
     );
+
 
   camera.fov +=
     (
       targetFov-
       camera.fov
-    )*
+    ) *
     Math.min(
       1,
       4*dt
     );
 
+
   camera.updateProjectionMatrix();
+
 }
+
 
 /* =========================================================
-   DRONES
-========================================================= */
-
-const drones=[];
-
-const droneColors=[
-  0xff00ff,
-  0x00ffff,
-  0xff0066,
-  0x00ff88
-];
-
-for(let i=0;i<35;i++){
-
-  const drone=
-    new THREE.Group();
-
-  const color=
-    droneColors[
-      Math.floor(
-        Math.random()*
-        droneColors.length
-      )
-    ];
-
-  const body=
-    new THREE.Mesh(
-      new THREE.SphereGeometry(
-        .8,8,8
-      ),
-      new THREE.MeshBasicMaterial({
-        color
-      })
-    );
-
-  drone.add(body);
-
-  const light=
-    new THREE.PointLight(
-      color,
-      2.5,
-      18,
-      2
-    );
-
-  drone.add(light);
-
-  drone.position.set(
-
-    (Math.random()-.5)*900,
-
-    30+Math.random()*150,
-
-    (Math.random()-.5)*900
-
-  );
-
-  drone.userData={
-    speed:.3+
-      Math.random()*.7,
-
-    angle:
-      Math.random()*Math.PI*2,
-
-    baseY:
-      30+
-      Math.random()*150
-  };
-
-  scene.add(drone);
-
-  drones.push(drone);
-}
-
-function updateDrones(dt){
-
-  const t=
-    performance.now()*.0005;
-
-  drones.forEach(
-    (drone,i)=>{
-
-      drone.userData.angle +=
-        drone.userData.speed*
-        dt;
-
-      drone.position.x +=
-        Math.cos(
-          drone.userData.angle+i
-        )*.4;
-
-      drone.position.z +=
-        Math.sin(
-          drone.userData.angle+i
-        )*.4;
-
-      drone.position.y=
-        drone.userData.baseY+
-        Math.sin(
-          t+i
-        )*1.5;
-
-      drone.rotation.y +=
-        dt*2;
-    }
-  );
-}
-
-/* =========================================================
-   RAIN UPDATE
+   ДОЖДЬ
 ========================================================= */
 
 function updateRain(dt){
 
-  const p=
-    rain.geometry.attributes
-      .position.array;
+  const p =
+    rain.geometry
+      .attributes
+      .position
+      .array;
+
 
   for(
     let i=0;
@@ -2906,8 +4844,9 @@ function updateRain(dt){
     i++
   ){
 
-    p[i*3+1]-=
+    p[i*3+1] -=
       80*dt;
+
 
     if(
       p[i*3+1]<0
@@ -2915,100 +4854,130 @@ function updateRain(dt){
 
       p[i*3+1]=140;
 
-      p[i*3]=
-        car.position.x+
-        (Math.random()-.5)*220;
 
-      p[i*3+2]=
+      p[i*3] =
+        car.position.x+
+        (Math.random()-.5)*
+        220;
+
+
+      p[i*3+2] =
         car.position.z+
-        (Math.random()-.5)*220;
+        (Math.random()-.5)*
+        220;
+
     }
+
   }
 
-  rain.geometry.attributes
+
+  rain.geometry
+    .attributes
     .position
     .needsUpdate=true;
+
 }
+
 
 /* =========================================================
    HUD
 ========================================================= */
 
-const speedEl=
+const speedEl =
   document.querySelector(
     "#speedo b"
   );
 
-const nitroFill=
+const nitroFill =
   document.getElementById(
     "nitroFill"
   );
 
-const mapCanvas=
+const mapCanvas =
   document.getElementById(
     "mapCanvas"
   );
 
-const mapCtx=
+const mapCtx =
   mapCanvas.getContext(
     "2d"
   );
 
+
 function updateHUD(){
 
-  const kmh=
+  const kmh =
     Math.abs(
       carState.speed
     )*3.6|0;
 
-  speedEl.textContent=
+
+  speedEl.textContent =
     kmh;
+
 
   let gear;
 
-  if(carState.airborne)
+
+  if(
+    carState.airborne
+  )
     gear="F";
+
   else if(kmh<5)
     gear="N";
+
   else if(kmh<40)
     gear=1;
+
   else if(kmh<80)
     gear=2;
+
   else if(kmh<130)
     gear=3;
+
   else if(kmh<200)
     gear=4;
+
   else
     gear=5;
 
-  document
-    .querySelector("#info b")
-    .textContent=gear;
 
-  document
-    .getElementById("styleName")
-    .textContent=
-      carStyles[
-        currentStyle
-      ].name;
+  document.querySelector(
+    "#info b"
+  ).textContent =
+    gear;
 
-  nitroFill.style.width=
+
+  document.getElementById(
+    "styleName"
+  ).textContent =
+    carStyles[
+      currentStyle
+    ].name;
+
+
+  nitroFill.style.width =
     carState.nitro+"%";
+
 }
 
+
 /* =========================================================
-   MINIMAP
+   МИНИКАРТА
 ========================================================= */
 
-let mapTimer=0;
+let mapTimer = 0;
+
 
 function drawMap(){
 
-  const W=
+  const W =
     mapCanvas.width;
 
-  const H=
+  const H =
     mapCanvas.height;
+
 
   mapCtx.clearRect(
     0,
@@ -3017,35 +4986,46 @@ function drawMap(){
     H
   );
 
+
   mapCtx.save();
+
 
   mapCtx.translate(
     W/2,
     H/2
   );
 
+
   mapCtx.rotate(
     -carState.heading
   );
 
-  const scale=.13;
 
-  mapCtx.fillStyle=
+  const scale =
+    0.13;
+
+
+  mapCtx.fillStyle =
     "rgba(255,0,255,.55)";
+
 
   for(
     const c of collidables
   ){
 
-    const x=
-      (c.x-
-       car.position.x)*
-      scale;
+    const x =
+      (
+        c.x-
+        car.position.x
+      )*scale;
 
-    const z=
-      (c.z-
-       car.position.z)*
-      scale;
+
+    const z =
+      (
+        c.z-
+        car.position.z
+      )*scale;
+
 
     if(
       Math.abs(x)<W/2 &&
@@ -3058,13 +5038,21 @@ function drawMap(){
         3,
         3
       );
+
     }
+
   }
 
-  mapCtx.fillStyle="#0ff";
 
-  mapCtx.shadowColor="#0ff";
-  mapCtx.shadowBlur=12;
+  mapCtx.fillStyle =
+    "#0ff";
+
+  mapCtx.shadowColor =
+    "#0ff";
+
+  mapCtx.shadowBlur =
+    12;
+
 
   mapCtx.beginPath();
 
@@ -3087,17 +5075,21 @@ function drawMap(){
 
   mapCtx.fill();
 
+
   mapCtx.restore();
+
 }
+
 
 /* =========================================================
    START
 ========================================================= */
 
-const splash=
+const splash =
   document.getElementById(
     "splash"
   );
+
 
 document
   .getElementById("startBtn")
@@ -3109,33 +5101,38 @@ document
 
       initAudio();
 
-      splash.style.opacity=0;
+      splash.style.opacity =
+        0;
+
 
       setTimeout(
         ()=>{
-          splash.style.display="none";
+          splash.style.display =
+            "none";
         },
         500
       );
 
     },
-    {passive:false}
+    {
+      passive:false
+    }
   );
+
 
 document.getElementById(
   "loading"
-).textContent=
+).textContent =
   "ГОРОД ГОТОВ";
 
+
 /* =========================================================
-   GAME LOOP
+   ГЛАВНЫЙ ЦИКЛ
 ========================================================= */
 
-const clock=
-  new THREE.Clock();
-
-let lastTime=
+let lastTime =
   performance.now();
+
 
 function loop(){
 
@@ -3143,54 +5140,59 @@ function loop(){
     loop
   );
 
-  /*
-    Защита от огромного dt,
-    если вкладка была свернута.
-  */
 
-  const now=
+  const now =
     performance.now();
 
-  const dt=
+
+  const dt =
     Math.min(
       (now-lastTime)/1000,
-      .05
+      0.05
     );
 
-  lastTime=now;
+
+  lastTime =
+    now;
+
 
   updateCar(dt);
 
   updateCamera(dt);
 
-  updateDrones(dt);
+  updateFlyingCars(dt);
 
   updateRain(dt);
 
   updateHUD();
 
-  /*
-    Миникарта обновляется
-    не 60 раз в секунду,
-    а примерно 20.
-  */
 
-  mapTimer+=dt;
+  mapTimer += dt;
 
-  if(mapTimer>.05){
+
+  if(
+    mapTimer>0.08
+  ){
 
     drawMap();
 
     mapTimer=0;
+
   }
+
 
   renderer.render(
     scene,
     camera
   );
+
 }
 
+
+drawMap();
+
 loop();
+
 
 /* =========================================================
    RESIZE
@@ -3200,59 +5202,55 @@ addEventListener(
   "resize",
   ()=>{
 
-    camera.aspect=
+    camera.aspect =
       innerWidth/
       innerHeight;
 
     camera.updateProjectionMatrix();
+
 
     renderer.setSize(
       innerWidth,
       innerHeight
     );
 
+
     renderer.setPixelRatio(
       Math.min(
         devicePixelRatio,
-        1.35
+        1.2
       )
     );
+
   }
 );
 
+
 /* =========================================================
-   MOBILE GESTURES
+   IOS GESTURES
 ========================================================= */
 
 document.addEventListener(
   "gesturestart",
-  e=>{
-    e.preventDefault();
-  },
+  e=>e.preventDefault(),
   {passive:false}
 );
 
 document.addEventListener(
   "gesturechange",
-  e=>{
-    e.preventDefault();
-  },
+  e=>e.preventDefault(),
   {passive:false}
 );
 
 document.addEventListener(
   "gestureend",
-  e=>{
-    e.preventDefault();
-  },
+  e=>e.preventDefault(),
   {passive:false}
 );
 
 document.addEventListener(
   "contextmenu",
-  e=>{
-    e.preventDefault();
-  }
+  e=>e.preventDefault()
 );
 
 </script>

@@ -2,275 +2,904 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>NEON HUNTER v4.0 // Cyberpunk R15</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON HUNTER v5.0 // Cyberpunk R15 Shooter</title>
 <style>
-  * { box-sizing: border-box; margin:0; padding:0; }
-  body { overflow:hidden; background:#000; font-family: 'Courier New', monospace; cursor:none; }
-  canvas { display:block; }
+  /* ============================================================
+     СБРОС И ОСНОВА
+     ============================================================ */
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #000;
+    font-family: 'Courier New', 'Consolas', monospace;
+    color: #0ff;
+    cursor: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  /* ============================================================
+     HUD — ВЕРХНИЙ ЛЕВЫЙ УГОЛ (HP, ENERGY, SCORE)
+     ============================================================ */
   #hud {
-    position:fixed; top:15px; left:15px; color:#0ff; font-size:15px;
-    text-shadow:0 0 10px #0ff; pointer-events:none; z-index:10;
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    font-size: 15px;
+    letter-spacing: 1px;
+    pointer-events: none;
+    z-index: 10;
+    text-shadow: 0 0 12px #0ff;
   }
-  #hud div { margin:5px 0; }
-  .bar { width:240px; height:16px; border:1px solid #0ff; background:rgba(0,0,0,0.7); position:relative; overflow:hidden; }
-  .bar > div { height:100%; transition:width 0.12s linear; }
-  #hpFill { background:linear-gradient(90deg,#f0f,#0ff); width:100%; box-shadow:0 0 12px #0ff; }
-  #enFill { background:linear-gradient(90deg,#ff0,#f80); width:0%; box-shadow:0 0 12px #f80; }
 
+  #hud > div {
+    margin: 6px 0;
+  }
+
+  .bar {
+    width: 260px;
+    height: 18px;
+    border: 1px solid #0ff;
+    background: rgba(0, 0, 0, 0.75);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.4), inset 0 0 8px rgba(0, 255, 255, 0.15);
+  }
+
+  .bar > div {
+    height: 100%;
+    transition: width 0.12s linear;
+    position: relative;
+  }
+
+  .bar > div::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: barShine 2s infinite;
+  }
+
+  @keyframes barShine {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  #hpFill {
+    width: 100%;
+    background: linear-gradient(90deg, #f0f, #0ff);
+    box-shadow: 0 0 12px #0ff;
+  }
+
+  #enFill {
+    width: 0%;
+    background: linear-gradient(90deg, #ff0, #f80);
+    box-shadow: 0 0 12px #f80;
+  }
+
+  #score, #kills, #wave {
+    font-size: 16px;
+    font-weight: bold;
+    color: #0ff;
+  }
+
+  #wave {
+    color: #f0f;
+    text-shadow: 0 0 12px #f0f;
+  }
+
+  /* ============================================================
+     ПРИЦЕЛ
+     ============================================================ */
   #crosshair {
-    position:fixed; pointer-events:none; z-index:12;
-    width:30px; height:30px; transform:translate(-50%,-50%);
-    left:50%; top:50%;
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    z-index: 12;
+    transition: transform 0.05s;
   }
-  #crosshair::before, #crosshair::after {
-    content:''; position:absolute; background:#0ff;
-    box-shadow:0 0 10px #0ff, 0 0 20px #0ff;
+
+  #crosshair::before,
+  #crosshair::after {
+    content: '';
+    position: absolute;
+    background: #0ff;
+    box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
   }
-  #crosshair::before { left:14px; top:0; width:2px; height:30px; }
-  #crosshair::after { top:14px; left:0; height:2px; width:30px; }
+
+  #crosshair::before {
+    left: 15px;
+    top: 0;
+    width: 2px;
+    height: 32px;
+  }
+
+  #crosshair::after {
+    top: 15px;
+    left: 0;
+    height: 2px;
+    width: 32px;
+  }
+
   #crosshair .dot {
-    position:absolute; left:13px; top:13px; width:4px; height:4px;
-    background:#f0f; border-radius:50%; box-shadow:0 0 10px #f0f;
+    position: absolute;
+    left: 13px;
+    top: 13px;
+    width: 6px;
+    height: 6px;
+    background: #f0f;
+    border-radius: 50%;
+    box-shadow: 0 0 12px #f0f, 0 0 24px #f0f;
+    animation: dotPulse 1.5s infinite;
   }
 
+  @keyframes dotPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.3); opacity: 0.7; }
+  }
+
+  /* ============================================================
+     НИЖНЯЯ ПОДСКАЗКА
+     ============================================================ */
   #info {
-    position:fixed; bottom:15px; left:50%; transform:translateX(-50%);
-    color:#0ff; text-shadow:0 0 8px #0ff; font-size:12px; z-index:10;
-    background:rgba(0,0,0,0.7); padding:8px 18px; border:1px solid #0ff;
-    border-radius:4px; text-align:center; letter-spacing:1px;
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: #0ff;
+    text-shadow: 0 0 8px #0ff;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 20px;
+    border: 1px solid #0ff;
+    border-radius: 4px;
+    z-index: 10;
+    text-align: center;
+    white-space: nowrap;
   }
 
+  /* ============================================================
+     ИНФО О ВОЛНЕ — ВЕРХНИЙ ПРАВЫЙ УГОЛ
+     ============================================================ */
   #waveInfo {
-    position:fixed; top:15px; right:15px; color:#f0f; font-size:16px;
-    text-shadow:0 0 12px #f0f; text-align:right; z-index:10;
-    background:rgba(0,0,0,0.5); padding:10px 16px; border:1px solid #f0f;
-    border-radius:4px; min-width:180px;
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    color: #f0f;
+    font-size: 16px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 12px #f0f;
+    text-align: right;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 12px 18px;
+    border: 1px solid #f0f;
+    border-radius: 4px;
+    min-width: 200px;
+    z-index: 10;
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
   }
 
+  /* ============================================================
+     ГЛАВНОЕ МЕНЮ
+     ============================================================ */
   #menu {
-    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(ellipse at center, #1a0033, #0a0018, #000);
-    z-index:500; flex-direction:column;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: radial-gradient(ellipse at center, #1a0033 0%, #0a0018 50%, #000 100%);
+    z-index: 500;
   }
+
+  #menu::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg,
+        transparent 0px,
+        transparent 2px,
+        rgba(0, 255, 255, 0.03) 2px,
+        rgba(0, 255, 255, 0.03) 4px
+      );
+    pointer-events: none;
+    animation: scanline 8s linear infinite;
+  }
+
+  @keyframes scanline {
+    from { transform: translateY(0); }
+    to   { transform: translateY(4px); }
+  }
+
   #menu h1 {
-    color:#f0f; font-size:76px; text-shadow:0 0 40px #f0f, 0 0 80px #f0f;
-    letter-spacing:10px; margin-bottom:10px; animation:pulse 2s infinite;
+    color: #f0f;
+    font-size: 82px;
+    font-weight: 900;
+    letter-spacing: 12px;
+    margin-bottom: 8px;
+    text-shadow:
+      0 0 20px #f0f,
+      0 0 40px #f0f,
+      0 0 80px #f0f,
+      0 0 120px #0ff;
+    animation: titlePulse 2s infinite;
+    z-index: 2;
   }
+
+  @keyframes titlePulse {
+    0%, 100% {
+      text-shadow:
+        0 0 20px #f0f,
+        0 0 40px #f0f,
+        0 0 80px #f0f;
+    }
+    50% {
+      text-shadow:
+        0 0 40px #f0f,
+        0 0 80px #f0f,
+        0 0 140px #f0f,
+        0 0 200px #0ff;
+    }
+  }
+
   #menu h2 {
-    color:#0ff; font-size:16px; text-shadow:0 0 12px #0ff;
-    letter-spacing:6px; margin-bottom:50px;
+    color: #0ff;
+    font-size: 16px;
+    letter-spacing: 8px;
+    margin-bottom: 60px;
+    text-shadow: 0 0 12px #0ff;
+    z-index: 2;
   }
-  @keyframes pulse {
-    0%,100% { text-shadow: 0 0 30px #f0f, 0 0 60px #f0f; }
-    50% { text-shadow: 0 0 60px #f0f, 0 0 120px #f0f, 0 0 160px #0ff; }
+
+  #menu .version {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    color: #0ff;
+    opacity: 0.5;
+    font-size: 12px;
+    letter-spacing: 2px;
   }
+
   .btn {
-    padding:16px 50px; margin:8px; font-size:18px; letter-spacing:4px;
-    background:transparent; color:#0ff; border:2px solid #0ff;
-    cursor:pointer; font-family:inherit; text-shadow:0 0 10px #0ff;
-    box-shadow:0 0 20px rgba(0,255,255,0.3), inset 0 0 20px rgba(0,255,255,0.1);
-    transition:all 0.3s; border-radius:4px; min-width:280px;
+    padding: 18px 60px;
+    margin: 8px;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 5px;
+    background: transparent;
+    color: #0ff;
+    border: 2px solid #0ff;
+    cursor: pointer;
+    font-family: inherit;
+    text-shadow: 0 0 10px #0ff;
+    box-shadow:
+      0 0 20px rgba(0, 255, 255, 0.3),
+      inset 0 0 20px rgba(0, 255, 255, 0.1);
+    transition: all 0.25s;
+    border-radius: 4px;
+    min-width: 320px;
+    position: relative;
+    overflow: hidden;
+    z-index: 2;
   }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+
+  .btn:hover::before {
+    transform: translateX(100%);
+  }
+
   .btn:hover {
-    background:#0ff; color:#000; text-shadow:none;
-    box-shadow:0 0 40px #0ff, 0 0 80px #0ff;
-    transform:scale(1.05);
+    background: #0ff;
+    color: #000;
+    text-shadow: none;
+    box-shadow:
+      0 0 40px #0ff,
+      0 0 80px #0ff;
+    transform: scale(1.05);
   }
+
+  /* ============================================================
+     ЭКРАН ЗАГРУЗКИ
+     ============================================================ */
   #loading {
-    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-    background:#000; color:#0ff; font-size:22px; z-index:600; flex-direction:column;
-    letter-spacing:3px;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: #000;
+    color: #0ff;
+    font-size: 22px;
+    letter-spacing: 4px;
+    z-index: 600;
   }
-  #loading .dot { animation: blink 1s infinite; }
-  @keyframes blink { 50% { opacity:0.2; } }
+
+  #loading .dot {
+    animation: blink 1s infinite;
+  }
+
+  @keyframes blink {
+    50% { opacity: 0.2; }
+  }
+
+  #loading .progress {
+    width: 300px;
+    height: 4px;
+    background: #1a1a2e;
+    margin-top: 20px;
+    border: 1px solid #0ff;
+    overflow: hidden;
+  }
+
+  #loading .progress > div {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #0ff, #f0f);
+    box-shadow: 0 0 12px #0ff;
+    transition: width 0.3s;
+  }
+
+  /* ============================================================
+     ЭКРАН ОШИБКИ
+     ============================================================ */
   #err {
-    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-    background:#200; color:#f66; font-size:14px; z-index:700; padding:40px;
-    white-space:pre-wrap; overflow:auto; font-family:monospace;
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(30, 0, 0, 0.97);
+    color: #f66;
+    font-size: 14px;
+    z-index: 700;
+    padding: 40px;
+    white-space: pre-wrap;
+    overflow: auto;
+    font-family: monospace;
+    text-align: left;
+    line-height: 1.6;
   }
+
+  /* ============================================================
+     ЭКРАН СМЕРТИ
+     ============================================================ */
   #gameover {
-    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-    background:rgba(0,0,0,0.92); color:#f0f; font-size:56px;
-    text-shadow:0 0 30px #f0f; z-index:100; flex-direction:column;
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: rgba(0, 0, 0, 0.94);
+    color: #f0f;
+    font-size: 62px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-shadow:
+      0 0 30px #f0f,
+      0 0 60px #f0f;
+    z-index: 100;
+    animation: gameoverPulse 1.5s infinite;
   }
+
+  @keyframes gameoverPulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.85; }
+  }
+
+  #gameover small {
+    font-size: 16px;
+    color: #0ff;
+    margin-top: 24px;
+    letter-spacing: 4px;
+    text-shadow: 0 0 12px #0ff;
+  }
+
+  /* ============================================================
+     HITMARKER (крестик при попадании)
+     ============================================================ */
   .hitmark {
-    position:fixed; pointer-events:none; color:#f00; font-size:28px;
-    font-weight:bold; z-index:20; text-shadow:0 0 12px #f00;
-    animation: hitFade 0.4s forwards;
+    position: fixed;
+    pointer-events: none;
+    color: #f00;
+    font-size: 30px;
+    font-weight: bold;
+    z-index: 20;
+    text-shadow:
+      0 0 12px #f00,
+      0 0 24px #f00;
+    animation: hitFade 0.45s forwards;
   }
+
   @keyframes hitFade {
-    0% { opacity:1; transform:scale(0.8); }
-    100% { opacity:0; transform:scale(1.6); }
+    0%   { opacity: 1; transform: scale(0.7); }
+    100% { opacity: 0; transform: scale(1.8); }
   }
+
+  /* ============================================================
+     DAMAGE OVERLAY (красные края экрана)
+     ============================================================ */
   #damageOverlay {
-    position:fixed; inset:0; pointer-events:none; z-index:15;
-    background: radial-gradient(ellipse at center, transparent 35%, rgba(255,0,0,0.6) 100%);
-    opacity:0; transition:opacity 0.2s;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15;
+    background: radial-gradient(
+      ellipse at center,
+      transparent 35%,
+      rgba(255, 0, 0, 0.7) 100%
+    );
+    opacity: 0;
+    transition: opacity 0.18s;
   }
+
+  /* ============================================================
+     KILLFEED (список убийств справа)
+     ============================================================ */
   .killfeed {
-    position:fixed; top:120px; right:15px; color:#0ff; font-size:13px;
-    text-shadow:0 0 8px #0ff; z-index:10; text-align:right;
-    background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:3px;
+    position: fixed;
+    top: 130px;
+    right: 16px;
+    color: #0ff;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px #0ff;
+    z-index: 10;
+    text-align: right;
+    pointer-events: none;
   }
-  .killfeed div { margin:3px 0; animation: slideIn 0.3s; }
-  @keyframes slideIn {
-    from { transform: translateX(30px); opacity:0; }
-    to { transform: translateX(0); opacity:1; }
+
+  .killfeed div {
+    margin: 4px 0;
+    padding: 3px 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-right: 2px solid #0ff;
+    animation: killSlideIn 0.3s;
   }
+
+  @keyframes killSlideIn {
+    from { transform: translateX(40px); opacity: 0; }
+    to   { transform: translateX(0); opacity: 1; }
+  }
+
+  /* ============================================================
+     ПОДСКАЗКА ЗАХВАТА МЫШИ
+     ============================================================ */
   #lockHint {
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    color:#0ff; text-shadow:0 0 20px #0ff; font-size:22px;
-    background:rgba(0,0,0,0.85); padding:20px 40px; border:2px solid #0ff;
-    border-radius:8px; z-index:400; display:none; text-align:center;
-    letter-spacing:2px; cursor:pointer;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #0ff;
+    font-size: 22px;
+    letter-spacing: 3px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.88);
+    padding: 24px 48px;
+    border: 2px solid #0ff;
+    border-radius: 8px;
+    box-shadow:
+      0 0 30px rgba(0, 255, 255, 0.4),
+      inset 0 0 30px rgba(0, 255, 255, 0.1);
+    z-index: 400;
+    display: none;
+    cursor: pointer;
+    text-shadow: 0 0 12px #0ff;
+    animation: lockPulse 1.5s infinite;
+  }
+
+  @keyframes lockPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50%      { transform: translate(-50%, -50%) scale(1.03); }
+  }
+
+  /* ============================================================
+     АДАПТИВ (мобильные)
+     ============================================================ */
+  @media (max-width: 768px) {
+    #menu h1 { font-size: 42px; letter-spacing: 6px; }
+    #menu h2 { font-size: 12px; letter-spacing: 4px; }
+    .btn { padding: 14px 30px; font-size: 14px; min-width: 240px; }
+    #hud { font-size: 12px; }
+    .bar { width: 180px; height: 14px; }
+    #info { font-size: 10px; padding: 6px 12px; white-space: normal; max-width: 90%; }
+    #waveInfo { font-size: 13px; min-width: 140px; padding: 8px 12px; }
+    #gameover { font-size: 36px; }
   }
 </style>
 </head>
 <body>
 
-<div id="loading">ЗАГРУЗКА СИСТЕМЫ<span class="dot">...</span></div>
-<div id="err"></div>
-<div id="damageOverlay"></div>
-
-<div id="menu">
-  <h1>NEON HUNTER</h1>
-  <h2>CYBERPUNK SHOOTER v4.0 · R15</h2>
-  <button class="btn" id="btnPlay">▶  ИГРАТЬ</button>
-  <button class="btn" id="btnHelp">?  УПРАВЛЕНИЕ</button>
+<!-- ============================================================
+     ЭКРАН ЗАГРУЗКИ
+     ============================================================ -->
+<div id="loading">
+  ЗАГРУЗКА СИСТЕМЫ<span class="dot">...</span>
+  <div class="progress"><div id="loadProgress"></div></div>
 </div>
 
-<div id="lockHint">🖱 КЛИКНИ СЮДА<br><small style="font-size:14px;">чтобы захватить мышь</small></div>
+<!-- ============================================================
+     ЭКРАН ОШИБКИ
+     ============================================================ -->
+<div id="err"></div>
 
-<div id="hud" style="display:none;">
+<!-- ============================================================
+     DAMAGE OVERLAY
+     ============================================================ -->
+<div id="damageOverlay"></div>
+
+<!-- ============================================================
+     ГЛАВНОЕ МЕНЮ
+     ============================================================ -->
+<div id="menu">
+  <h1>NEON HUNTER</h1>
+  <h2>CYBERPUNK SHOOTER v5.0 · R15</h2>
+  <button class="btn" id="btnPlay">▶  ИГРАТЬ</button>
+  <button class="btn" id="btnHelp">?  УПРАВЛЕНИЕ</button>
+  <button class="btn" id="btnCredits">©  О ИГРЕ</button>
+  <div class="version">v5.0 · R15 · BUILT WITH THREE.JS</div>
+</div>
+
+<!-- ============================================================
+     ПОДСКАЗКА ЗАХВАТА МЫШИ
+     ============================================================ -->
+<div id="lockHint">
+  🖱 КЛИКНИ СЮДА<br>
+  <small style="font-size: 14px; opacity: 0.8;">чтобы захватить мышь</small>
+</div>
+
+<!-- ============================================================
+     HUD
+     ============================================================ -->
+<div id="hud" style="display: none;">
   <div>HP: <div class="bar"><div id="hpFill"></div></div></div>
   <div>ENERGY: <div class="bar"><div id="enFill"></div></div></div>
   <div id="score">SCORE: 0</div>
   <div id="kills">KILLS: 0</div>
   <div id="wave">WAVE: 1</div>
 </div>
-<div id="waveInfo" style="display:none;"></div>
-<div id="crosshair" style="display:none;"><div class="dot"></div></div>
-<div id="info" style="display:none;">
-  WASD — движение | SHIFT — бег | SPACE — прыжок (x2) | ЛКМ — плазма | ПКМ (держать) — МЕГА-ЛАЗЕР | E — мина
+
+<!-- ============================================================
+     ИНФО О ВОЛНЕ
+     ============================================================ -->
+<div id="waveInfo" style="display: none;"></div>
+
+<!-- ============================================================
+     ПРИЦЕЛ
+     ============================================================ -->
+<div id="crosshair" style="display: none;"><div class="dot"></div></div>
+
+<!-- ============================================================
+     ПОДСКАЗКА УПРАВЛЕНИЯ
+     ============================================================ -->
+<div id="info" style="display: none;">
+  WASD — движение | SHIFT — бег | SPACE — прыжок (x2) | ЛКМ — плазма | ПКМ (держать) — МЕГА-ЛАЗЕР | E — мина | ESC — пауза
 </div>
+
+<!-- ============================================================
+     ЭКРАН СМЕРТИ
+     ============================================================ -->
 <div id="gameover">
   СИСТЕМА УНИЧТОЖЕНА
-  <div style="font-size:22px; color:#0ff; margin-top:20px;" id="finalScore"></div>
-  <small style="font-size:16px; color:#f0f; margin-top:20px;">F5 — перезапуск</small>
+  <div style="font-size: 22px; color: #0ff; margin-top: 24px; letter-spacing: 4px;" id="finalScore"></div>
+  <small>F5 — ПЕРЕЗАПУСК</small>
 </div>
 
+<!-- ============================================================
+     THREE.JS
+     ============================================================ -->
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+
 <script>
+// ============================================================
+// ЧАСТЬ 1 — ИНИЦИАЛИЗАЦИЯ, ЗВУК, МЕНЮ, ЗАПУСК
+// ============================================================
+// Эта часть отвечает за:
+// - Обработку ошибок
+// - Web Audio API (звуки без файлов)
+// - Проверку загрузки Three.js
+// - Меню и кнопки
+// - Функцию startGame() — запуск Части 2
+// ============================================================
+
 
 // ============================================================
-// ЧАСТЬ 1 — ИНИЦИАЛИЗАЦИЯ, ЗВУК, МЕНЮ
+// ОБРАБОТКА ОШИБОК — показываем на экране
 // ============================================================
-
-// ==== ЗАЩИТА ОТ ОШИБОК ====
 window.addEventListener('error', function(e) {
   const err = document.getElementById('err');
+  if (!err) return;
   err.style.display = 'flex';
-  err.textContent = 'ОШИБКА:\n' + e.message + '\n\n' + (e.filename || '') + ':' + (e.lineno || '');
+  err.textContent = 'ОШИБКА:\n' + e.message + '\n\n' +
+                   'Файл: ' + (e.filename || '?') + '\n' +
+                   'Строка: ' + (e.lineno || '?');
 });
 
-// ==== АУДИО (Web Audio API, без файлов) ====
+
+// ============================================================
+// АУДИО — Web Audio API (генерируем звуки на лету)
+// ============================================================
 let audioCtx = null;
+
 function initAudio() {
   if (!audioCtx) {
-    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (e) {
+      console.warn('AudioContext недоступен');
+    }
+  }
+  // Возобновляем если браузер поставил на паузу
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
   }
 }
+
 function playSound(freq, dur, type, vol) {
   if (!audioCtx) return;
   try {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.type = type || 'square';
-    o.frequency.value = freq;
-    o.connect(g); g.connect(audioCtx.destination);
-    g.gain.setValueAtTime(vol || 0.08, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-    o.start(); o.stop(audioCtx.currentTime + dur);
-  } catch(e){}
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.type = type || 'square';
+    osc.frequency.value = freq;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const v = vol !== undefined ? vol : 0.08;
+    gain.gain.setValueAtTime(v, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + dur);
+  } catch (e) {
+    // игнорируем
+  }
 }
+
+// Все звуковые эффекты игры
 const sfx = {
-  laser:   () => playSound(880, 0.08, 'sawtooth', 0.06),
-  mega:    () => { playSound(120, 0.7, 'sawtooth', 0.15); playSound(300, 0.6, 'square', 0.1); },
-  explode: () => playSound(70, 0.35, 'sawtooth', 0.14),
-  hit:     () => playSound(1400, 0.04, 'square', 0.04),
-  hurt:    () => playSound(160, 0.2, 'sawtooth', 0.1),
-  pickup:  () => playSound(1600, 0.15, 'sine', 0.09),
-  jump:    () => playSound(600, 0.1, 'sine', 0.05),
-  mine:    () => playSound(300, 0.12, 'square', 0.05),
+  laser:   function() { playSound(880, 0.08, 'sawtooth', 0.06); },
+  mega:    function() {
+    playSound(120, 0.7, 'sawtooth', 0.15);
+    playSound(300, 0.6, 'square', 0.1);
+    playSound(600, 0.5, 'sine', 0.06);
+  },
+  explode: function() { playSound(70, 0.35, 'sawtooth', 0.14); },
+  hit:     function() { playSound(1400, 0.04, 'square', 0.04); },
+  hurt:    function() { playSound(160, 0.2, 'sawtooth', 0.1); },
+  pickup:  function() { playSound(1600, 0.15, 'sine', 0.09); },
+  jump:    function() { playSound(600, 0.1, 'sine', 0.05); },
+  mine:    function() { playSound(300, 0.12, 'square', 0.05); },
+  charge:  function() { playSound(400, 0.4, 'sine', 0.05); },
+  waveStart: function() {
+    playSound(220, 0.4, 'sawtooth', 0.1);
+    setTimeout(function(){ playSound(440, 0.4, 'sawtooth', 0.1); }, 200);
+    setTimeout(function(){ playSound(880, 0.6, 'sawtooth', 0.12); }, 400);
+  },
+  boss: function() {
+    playSound(80, 1.0, 'sawtooth', 0.18);
+    playSound(160, 0.8, 'square', 0.12);
+  }
 };
 
-// ==== ПРОВЕРКА THREE.JS И ЗАПУСК ====
-window.addEventListener('load', () => {
-  setTimeout(() => {
+
+// ============================================================
+// ПРОГРЕСС ЗАГРУЗКИ (визуальный)
+// ============================================================
+let _loadProgress = 0;
+function setLoadProgress(p) {
+  _loadProgress = p;
+  const el = document.getElementById('loadProgress');
+  if (el) el.style.width = p + '%';
+}
+
+
+// ============================================================
+// ПРОВЕРКА THREE.JS И ЗАПУСК МЕНЮ
+// ============================================================
+window.addEventListener('load', function() {
+  setLoadProgress(30);
+
+  setTimeout(function() {
+    setLoadProgress(60);
+
     if (typeof THREE === 'undefined') {
       document.getElementById('loading').style.display = 'none';
       const err = document.getElementById('err');
       err.style.display = 'flex';
-      err.textContent = '❌ Three.js не загрузился.\n\nРешения:\n1. Открыть в Firefox\n2. python -m http.server 8000\n3. Загрузить на GitHub Pages';
+      err.textContent =
+        '❌ Three.js не загрузился.\n\n' +
+        'Возможные причины и решения:\n\n' +
+        '1. Ты открываешь файл через file:// в Chrome/Edge — они блокируют загрузку.\n' +
+        '   → Открой через Firefox\n' +
+        '   → Или запусти python -m http.server 8000 и открой http://localhost:8000\n' +
+        '   → Или загрузи на GitHub Pages\n\n' +
+        '2. Нет интернета — проверь соединение.\n\n' +
+        '3. Расширение браузера блокирует unpkg.com — отключи его.';
       return;
     }
-    initMenu();
-  }, 500);
+
+    setLoadProgress(100);
+
+    setTimeout(function() {
+      initMenu();
+      document.getElementById('loading').style.display = 'none';
+    }, 300);
+  }, 400);
 });
 
-function initMenu() {
-  document.getElementById('loading').style.display = 'none';
 
-  document.getElementById('btnPlay').addEventListener('click', () => {
+// ============================================================
+// МЕНЮ
+// ============================================================
+function initMenu() {
+  const btnPlay = document.getElementById('btnPlay');
+  const btnHelp = document.getElementById('btnHelp');
+  const btnCredits = document.getElementById('btnCredits');
+
+  btnPlay.addEventListener('click', function() {
     document.getElementById('menu').style.display = 'none';
     document.getElementById('hud').style.display = 'block';
     document.getElementById('crosshair').style.display = 'block';
     document.getElementById('info').style.display = 'block';
     document.getElementById('waveInfo').style.display = 'block';
+
     initAudio();
     startGame();
   });
 
-  document.getElementById('btnHelp').addEventListener('click', () => {
-    alert('УПРАВЛЕНИЕ v4.0:\n\n🖱 МЫШЬ — камера\n🖱 КОЛЕСО — зум\nЛКМ — плазменный заряд\nПКМ (держать 1.2с) — МЕГА-ЛАЗЕР (ваншот)\nWASD — движение\nSHIFT — бег\nSPACE — двойной прыжок\nE — мина\nESC — освободить мышь\n\nРоботы ЛЕТАЮТ и бьют НОЖАМИ. Не стреляют.');
+  btnHelp.addEventListener('click', function() {
+    alert(
+      '═══════════════════════════════════\n' +
+      '   УПРАВЛЕНИЕ NEON HUNTER v5.0\n' +
+      '═══════════════════════════════════\n\n' +
+      '🖱  МЫШЬ  — поворот камеры вокруг персонажа\n' +
+      '🖱  КОЛЕСО  — приближение / отдаление\n\n' +
+      'ЛКМ  — плазменный заряд (жёлтый шар)\n' +
+      'ПКМ (держать 1.2с)  — МЕГА-ЛАЗЕР (ваншот)\n\n' +
+      'WASD  — движение относительно камеры\n' +
+      'SHIFT  — бег\n' +
+      'SPACE  — прыжок (можно дважды в воздухе)\n' +
+      'E  — поставить мину\n' +
+      'ESC  — освободить мышь\n\n' +
+      '═══════════════════════════════════\n' +
+      '   ЦЕЛЬ ИГРЫ\n' +
+      '═══════════════════════════════════\n\n' +
+      'Роботы-убийцы ЛЕТАЮТ и атакуют НОЖАМИ.\n' +
+      'Они не стреляют — только приближаются и бьют вблизи.\n\n' +
+      'Выживай против ВОЛН. Каждые 5 волн — БОСС.\n' +
+      'Собирай бонусы:\n' +
+      '  🟢 зелёный куб  — +30 HP\n' +
+      '  🟠 оранжевый октаэдр  — +50 энергии\n\n' +
+      'МЕГА-ЛАЗЕР убивает всё на своём пути с одного попадания!'
+    );
+  });
+
+  btnCredits.addEventListener('click', function() {
+    alert(
+      '═══════════════════════════════════\n' +
+      '   NEON HUNTER v5.0\n' +
+      '═══════════════════════════════════\n\n' +
+      'Технологии:\n' +
+      '• Three.js r160 — 3D-движок\n' +
+      '• Web Audio API — генерация звука\n' +
+      '• Pointer Lock API — захват мыши\n' +
+      '• Скелет R15 — 15 частей тела\n\n' +
+      'Особенности:\n' +
+      '• Город 40×40 с японскими билбордами\n' +
+      '• 20 видов роботов с ножами\n' +
+      '• Плазменные лазеры (как у Злого Морти)\n' +
+      '• Мега-лазер с ваншотом\n' +
+      '• Двойной прыжок\n' +
+      '• Мины\n' +
+      '• Волны и боссы\n\n' +
+      'Приятной игры! 🎮'
+    );
   });
 }
 
+
+// ============================================================
+// ЗАПУСК ИГРЫ — вызывает mainGame() из Части 2
+// ============================================================
 let gameStarted = false;
+
 function startGame() {
   if (gameStarted) return;
   gameStarted = true;
   mainGame();
 }
+
+// НЕ ЗАКРЫВАЙ SCRIPT — продолжение в Части 2
+ // ============================================================
+// ЧАСТЬ 2 — СЦЕНА, СВЕТ, ГОРОД 40×40
 // ============================================================
-// ЧАСТЬ 2 — СЦЕНА, СВЕТ, ГОРОД, ПЕРСОНАЖ R15
+// Эта часть внутри функции mainGame(), которая вызывается
+// из startGame() в Части 1.
+//
+// Содержит:
+// - Инициализация THREE-сцены, камеры, рендера
+// - Освещение (ambient + moon + городские огни)
+// - Земля с сеткой
+// - Генерация детального города 40×40
+// - Билборды, кабели, антенны, трубы, окна
+//
+// ВАЖНО: В конце НЕ закрывай mainGame() — продолжение в Части 3
 // ============================================================
 
 function mainGame() {
 
   // ============================================================
-  // СЦЕНА / РЕНДЕР / ТУМАН
+  // СЦЕНА / КАМЕРА / РЕНДЕР
   // ============================================================
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x02000a);
   scene.fog = new THREE.FogExp2(0x08001a, 0.009);
 
-  const camera = new THREE.PerspectiveCamera(72, innerWidth / innerHeight, 0.1, 500);
-  const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+  const camera = new THREE.PerspectiveCamera(
+    72,                        // FOV
+    innerWidth / innerHeight,  // соотношение
+    0.1,                       // near
+    600                        // far
+  );
+
+  const renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    powerPreference: 'high-performance'
+  });
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.35;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
   document.body.appendChild(renderer.domElement);
 
+
   // ============================================================
-  // СВЕТ
+  // ОСВЕЩЕНИЕ
   // ============================================================
+
+  // Общий мягкий свет
   scene.add(new THREE.AmbientLight(0x1a0033, 0.7));
 
+  // Лунный / направленный свет
   const moon = new THREE.DirectionalLight(0x6644ff, 1.3);
   moon.position.set(50, 90, 40);
   moon.castShadow = true;
@@ -279,26 +908,48 @@ function mainGame() {
   moon.shadow.camera.right = 120;
   moon.shadow.camera.top = 120;
   moon.shadow.camera.bottom = -120;
+  moon.shadow.camera.near = 0.5;
   moon.shadow.camera.far = 300;
+  moon.shadow.bias = -0.0005;
   scene.add(moon);
 
-  const neonColors = [0xff00ff, 0x00ffff, 0xff0066, 0x00ff88, 0xffaa00, 0xff3300, 0xaa00ff, 0x00ffaa, 0xff44aa];
+  // Палитра неоновых цветов города
+  const neonColors = [
+    0xff00ff, // розовый
+    0x00ffff, // голубой
+    0xff0066, // малиновый
+    0x00ff88, // изумрудный
+    0xffaa00, // янтарный
+    0xff3300, // оранжевый
+    0xaa00ff, // фиолетовый
+    0x00ffaa, // бирюзовый
+    0xff44aa  // фуксия
+  ];
 
-  // Городские огни
+  // Много неоновых точечных огней по городу
   const cityLights = [];
   for (let i = 0; i < 30; i++) {
-    const l = new THREE.PointLight(neonColors[i % neonColors.length], 3, 55);
+    const l = new THREE.PointLight(
+      neonColors[i % neonColors.length],
+      3,        // intensity
+      55        // distance
+    );
     l.position.set(
       (Math.random() - 0.5) * 180,
       8 + Math.random() * 22,
       (Math.random() - 0.5) * 180
     );
     scene.add(l);
-    cityLights.push({ light: l, base: 3, phase: Math.random() * Math.PI * 2 });
+    cityLights.push({
+      light: l,
+      base: 3,
+      phase: Math.random() * Math.PI * 2
+    });
   }
 
+
   // ============================================================
-  // ЗЕМЛЯ И СЕТКА
+  // ЗЕМЛЯ
   // ============================================================
   const groundGeo = new THREE.PlaneGeometry(240, 240, 60, 60);
   const groundMat = new THREE.MeshStandardMaterial({
@@ -308,45 +959,71 @@ function mainGame() {
     emissive: 0x0f0022,
     emissiveIntensity: 0.5
   });
+
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
 
+  // Неоновая сетка на земле
   const grid = new THREE.GridHelper(240, 120, 0xff00ff, 0x00ffff);
   grid.position.y = 0.02;
   grid.material.opacity = 0.35;
   grid.material.transparent = true;
   scene.add(grid);
 
+
   // ============================================================
-  // ГОРОД 40×40 — ДЕТАЛИЗИРОВАННЫЙ
+  // ГОРОД 40×40
   // ============================================================
   const CITY_SIZE = 40;
   const CELL = 5;
   const buildingColliders = [];
 
+  // Палитра материалов зданий
   const buildMats = [
-    new THREE.MeshStandardMaterial({ color:0x1a1a2e, metalness:0.88, roughness:0.3, emissive:0x220044, emissiveIntensity:0.4 }),
-    new THREE.MeshStandardMaterial({ color:0x16213e, metalness:0.9, roughness:0.25, emissive:0x004466, emissiveIntensity:0.4 }),
-    new THREE.MeshStandardMaterial({ color:0x0f0f1e, metalness:0.92, roughness:0.2, emissive:0x440022, emissiveIntensity:0.4 }),
-    new THREE.MeshStandardMaterial({ color:0x2a1a3e, metalness:0.85, roughness:0.32, emissive:0x004444, emissiveIntensity:0.35 }),
-    new THREE.MeshStandardMaterial({ color:0x1e1030, metalness:0.9, roughness:0.28, emissive:0x330066, emissiveIntensity:0.45 }),
+    new THREE.MeshStandardMaterial({
+      color: 0x1a1a2e, metalness: 0.88, roughness: 0.3,
+      emissive: 0x220044, emissiveIntensity: 0.4
+    }),
+    new THREE.MeshStandardMaterial({
+      color: 0x16213e, metalness: 0.9, roughness: 0.25,
+      emissive: 0x004466, emissiveIntensity: 0.4
+    }),
+    new THREE.MeshStandardMaterial({
+      color: 0x0f0f1e, metalness: 0.92, roughness: 0.2,
+      emissive: 0x440022, emissiveIntensity: 0.4
+    }),
+    new THREE.MeshStandardMaterial({
+      color: 0x2a1a3e, metalness: 0.85, roughness: 0.32,
+      emissive: 0x004444, emissiveIntensity: 0.35
+    }),
+    new THREE.MeshStandardMaterial({
+      color: 0x1e1030, metalness: 0.9, roughness: 0.28,
+      emissive: 0x330066, emissiveIntensity: 0.45
+    }),
+    new THREE.MeshStandardMaterial({
+      color: 0x120020, metalness: 0.95, roughness: 0.18,
+      emissive: 0x4400aa, emissiveIntensity: 0.5
+    })
   ];
 
-  // ---------- Билборд с "японскими иероглифами" ----------
+
+  // ------------------------------------------------------------
+  // БИЛБОРД С "ЯПОНСКИМИ ИЕРОГЛИФАМИ"
+  // ------------------------------------------------------------
   function makeBillboard(x, y, z, rotY, color) {
     const g = new THREE.Group();
     const W = 4.8, H = 2.8;
 
-    // Светящаяся рамка
+    // Внешняя светящаяся рамка
     const frame = new THREE.Mesh(
       new THREE.BoxGeometry(W + 0.3, H + 0.3, 0.28),
       new THREE.MeshBasicMaterial({ color: color })
     );
     g.add(frame);
 
-    // Тёмный экран
+    // Тёмный экран с лёгким свечением
     const screen = new THREE.Mesh(
       new THREE.PlaneGeometry(W, H),
       new THREE.MeshStandardMaterial({
@@ -358,7 +1035,7 @@ function mainGame() {
     screen.position.z = 0.15;
     g.add(screen);
 
-    // "Иероглифы" — белые штрихи
+    // "Иероглифы" — белые штрихи разной длины
     const cols = 7, rows = 4;
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
@@ -367,7 +1044,11 @@ function mainGame() {
         const sh = 0.12 + Math.random() * 0.35;
         const strip = new THREE.Mesh(
           new THREE.PlaneGeometry(sw, sh),
-          new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 })
+          new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.85 + Math.random() * 0.15
+          })
         );
         strip.position.set(
           -W / 2 + 0.5 + c * (W - 1) / cols,
@@ -386,16 +1067,33 @@ function mainGame() {
     topStrip.position.y = H / 2 + 0.35;
     g.add(topStrip);
 
+    // Нижняя светящаяся плашка
+    const botStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(W + 0.4, 0.1, 0.3),
+      new THREE.MeshBasicMaterial({ color: color })
+    );
+    botStrip.position.y = -H / 2 - 0.3;
+    g.add(botStrip);
+
+    // Точечный свет на билборде
+    const light = new THREE.PointLight(color, 1.5, 10);
+    light.position.z = 1;
+    g.add(light);
+
     g.position.set(x, y, z);
     g.rotation.y = rotY;
     scene.add(g);
   }
 
-  // ---------- Провисающие кабели ----------
+
+  // ------------------------------------------------------------
+  // ПРОВИСАЮЩИЕ КАБЕЛИ МЕЖДУ ЗДАНИЯМИ
+  // ------------------------------------------------------------
   function makeCable(x1, y1, z1, x2, y2, z2, color) {
     const points = [];
     const segs = 8;
     const sag = 1.5;
+
     for (let i = 0; i <= segs; i++) {
       const t = i / segs;
       const sagY = -Math.sin(t * Math.PI) * sag;
@@ -405,32 +1103,51 @@ function mainGame() {
         z1 + (z2 - z1) * t
       ));
     }
+
     const curve = new THREE.CatmullRomCurve3(points);
     const tubeGeo = new THREE.TubeGeometry(curve, 10, 0.05, 5, false);
-    const tube = new THREE.Mesh(tubeGeo, new THREE.MeshBasicMaterial({ color }));
+    const tube = new THREE.Mesh(
+      tubeGeo,
+      new THREE.MeshBasicMaterial({ color: color })
+    );
     scene.add(tube);
   }
 
-  // ---------- Антенна на крыше ----------
+
+  // ------------------------------------------------------------
+  // АНТЕННА НА КРЫШЕ
+  // ------------------------------------------------------------
   function makeAntenna(x, y, z, height, color) {
+    // Основной столб
     const pole = new THREE.Mesh(
       new THREE.CylinderGeometry(0.06, 0.08, height, 6),
-      new THREE.MeshStandardMaterial({ color: 0x222233, metalness: 1, roughness: 0.2 })
+      new THREE.MeshStandardMaterial({
+        color: 0x222233,
+        metalness: 1,
+        roughness: 0.2
+      })
     );
     pole.position.set(x, y + height / 2, z);
     scene.add(pole);
 
+    // Светящийся кончик
     const tip = new THREE.Mesh(
       new THREE.SphereGeometry(0.15, 8, 8),
-      new THREE.MeshBasicMaterial({ color })
+      new THREE.MeshBasicMaterial({ color: color })
     );
     tip.position.set(x, y + height, z);
     scene.add(tip);
 
+    // Мигающий огонёк на кончике
+    const tipLight = new THREE.PointLight(color, 1, 8);
+    tipLight.position.set(x, y + height, z);
+    scene.add(tipLight);
+
+    // Перекладины
     for (let i = 1; i <= 3; i++) {
       const bar = new THREE.Mesh(
         new THREE.CylinderGeometry(0.03, 0.03, 0.6, 4),
-        new THREE.MeshBasicMaterial({ color })
+        new THREE.MeshBasicMaterial({ color: color })
       );
       bar.rotation.z = Math.PI / 2;
       bar.position.set(x, y + (height * i / 4), z);
@@ -438,21 +1155,35 @@ function mainGame() {
     }
   }
 
-  // ---------- Одно здание ----------
+
+  // ------------------------------------------------------------
+  // ОДНО ЗДАНИЕ
+  // ------------------------------------------------------------
   function makeBuilding(x, z) {
+    // Размеры здания
     const w = 2.8 + Math.random() * 1.6;
     const d = 2.8 + Math.random() * 1.6;
     const h = 5 + Math.random() * 26;
+
+    // Материал
     const mat = buildMats[Math.floor(Math.random() * buildMats.length)];
 
+    // Основной блок
     const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
     b.position.set(x, h / 2, z);
     b.castShadow = true;
     b.receiveShadow = true;
     scene.add(b);
 
-    buildingColliders.push({ x, z, w: w / 2 + 0.5, d: d / 2 + 0.5 });
+    // Коллайдер для игрока
+    buildingColliders.push({
+      x: x,
+      z: z,
+      w: w / 2 + 0.5,
+      d: d / 2 + 0.5
+    });
 
+    // Неоновый цвет для элементов этого здания
     const edgeColor = neonColors[Math.floor(Math.random() * neonColors.length)];
 
     // Неоновая кромка сверху
@@ -463,54 +1194,85 @@ function mainGame() {
     edge.position.set(x, h + 0.06, z);
     scene.add(edge);
 
-    // Вертикальные неоновые полосы
+    // Вертикальные неоновые полосы (1-3 шт)
     const stripCount = Math.floor(Math.random() * 3) + 1;
     for (let s = 0; s < stripCount; s++) {
       const sc = neonColors[Math.floor(Math.random() * neonColors.length)];
+      const stripH = h * (0.6 + Math.random() * 0.35);
       const strip = new THREE.Mesh(
-        new THREE.BoxGeometry(0.14, h * (0.6 + Math.random() * 0.35), 0.08),
+        new THREE.BoxGeometry(0.14, stripH, 0.08),
         new THREE.MeshBasicMaterial({ color: sc })
       );
+
+      // Выбираем сторону
       const side = Math.floor(Math.random() * 4);
       let sx = x, sz = z;
       if (side === 0) sx = x + w / 2 + 0.05;
       else if (side === 1) sx = x - w / 2 - 0.05;
       else if (side === 2) sz = z + d / 2 + 0.05;
       else sz = z - d / 2 - 0.05;
+
       strip.position.set(sx, h / 2, sz);
       scene.add(strip);
     }
 
-    // Окна
+    // Светящиеся окна
     const winRows = Math.floor(h / 1.8);
     for (let i = 0; i < winRows; i++) {
       if (Math.random() < 0.35) continue;
+
       const face = Math.floor(Math.random() * 4);
-      const wc = Math.random() < 0.5 ? 0xffaa44 : (Math.random() < 0.5 ? 0x00ffff : 0xff00ff);
+      const wc = Math.random() < 0.5
+        ? 0xffaa44
+        : (Math.random() < 0.5 ? 0x00ffff : 0xff00ff);
+
       const win = new THREE.Mesh(
         new THREE.PlaneGeometry(0.4 + Math.random() * 0.35, 0.3),
         new THREE.MeshBasicMaterial({ color: wc })
       );
+
       const wy = 2 + i * 1.8;
+
       if (face === 0) {
-        win.position.set(x + w / 2 + 0.03, wy, z + (Math.random() - 0.5) * d * 0.5);
+        win.position.set(
+          x + w / 2 + 0.03,
+          wy,
+          z + (Math.random() - 0.5) * d * 0.5
+        );
       } else if (face === 1) {
-        win.position.set(x - w / 2 - 0.03, wy, z + (Math.random() - 0.5) * d * 0.5);
+        win.position.set(
+          x - w / 2 - 0.03,
+          wy,
+          z + (Math.random() - 0.5) * d * 0.5
+        );
         win.rotation.y = Math.PI;
       } else if (face === 2) {
-        win.position.set(x + (Math.random() - 0.5) * w * 0.5, wy, z + d / 2 + 0.03);
+        win.position.set(
+          x + (Math.random() - 0.5) * w * 0.5,
+          wy,
+          z + d / 2 + 0.03
+        );
       } else {
-        win.position.set(x + (Math.random() - 0.5) * w * 0.5, wy, z - d / 2 - 0.03);
+        win.position.set(
+          x + (Math.random() - 0.5) * w * 0.5,
+          wy,
+          z - d / 2 - 0.03
+        );
         win.rotation.y = Math.PI;
       }
+
       scene.add(win);
     }
 
-    // Трубы сбоку
+    // Труба сбоку (для высоких зданий)
     if (Math.random() < 0.4 && h > 10) {
       const pipe = new THREE.Mesh(
         new THREE.CylinderGeometry(0.1, 0.1, h * 0.7, 6),
-        new THREE.MeshStandardMaterial({ color: 0x2a2a3a, metalness: 0.9, roughness: 0.3 })
+        new THREE.MeshStandardMaterial({
+          color: 0x2a2a3a,
+          metalness: 0.9,
+          roughness: 0.3
+        })
       );
       const side = Math.random() < 0.5 ? 1 : -1;
       pipe.position.set(
@@ -521,118 +1283,221 @@ function mainGame() {
       scene.add(pipe);
     }
 
-    // Билборд
+    // Билборд на стене (для высоких зданий)
     if (h > 12 && Math.random() < 0.7) {
       const col = neonColors[Math.floor(Math.random() * neonColors.length)];
       const side = Math.random() < 0.5 ? 1 : -1;
-      makeBillboard(x, h - 2.5, z + side * (d / 2 + 0.3), side > 0 ? 0 : Math.PI, col);
+      makeBillboard(
+        x,
+        h - 2.5,
+        z + side * (d / 2 + 0.3),
+        side > 0 ? 0 : Math.PI,
+        col
+      );
     }
 
-    // Большой билборд на крыше
+    // Большой билборд на крыше (для очень высоких)
     if (h > 20 && Math.random() < 0.5) {
       const col = neonColors[Math.floor(Math.random() * neonColors.length)];
-      makeBillboard(x, h + 2, z, Math.random() * Math.PI * 2, col);
+      makeBillboard(
+        x,
+        h + 2,
+        z,
+        Math.random() * Math.PI * 2,
+        col
+      );
     }
 
-    // Антенна
+    // Антенна на крыше
     if (h > 15 && Math.random() < 0.5) {
       const col = neonColors[Math.floor(Math.random() * neonColors.length)];
       makeAntenna(x, h, z, 2 + Math.random() * 3, col);
     }
   }
 
-  // ---------- Генерация города ----------
+
+  // ------------------------------------------------------------
+  // ГЕНЕРАЦИЯ ГОРОДА
+  // ------------------------------------------------------------
   (function generateCity() {
     const half = (CITY_SIZE * CELL) / 2;
+
     for (let ix = 0; ix < CITY_SIZE; ix++) {
       for (let iz = 0; iz < CITY_SIZE; iz++) {
-        // Центральная площадь
-        if (Math.abs(ix - CITY_SIZE / 2) < 3 && Math.abs(iz - CITY_SIZE / 2) < 3) continue;
-        // Пропуски
+
+        // Оставляем центральную площадь пустой
+        if (Math.abs(ix - CITY_SIZE / 2) < 3 &&
+            Math.abs(iz - CITY_SIZE / 2) < 3) {
+          continue;
+        }
+
+        // Случайные пропуски (дворы)
         if (Math.random() < 0.3) continue;
-        // Проспекты
+
+        // Проспекты — каждые 9 клеток
         if (ix % 9 === 4 || iz % 9 === 4) continue;
+
         const x = ix * CELL - half + CELL / 2;
         const z = iz * CELL - half + CELL / 2;
+
         makeBuilding(x, z);
       }
     }
   })();
 
-  // Кабели между соседними зданиями
+
+  // ------------------------------------------------------------
+  // КАБЕЛИ МЕЖДУ ЗДАНИЯМИ (40 штук по городу)
+  // ------------------------------------------------------------
   for (let i = 0; i < 40; i++) {
     const angle = Math.random() * Math.PI * 2;
     const r = 20 + Math.random() * 70;
+
     const x1 = Math.cos(angle) * r;
     const z1 = Math.sin(angle) * r;
     const x2 = x1 + (Math.random() - 0.5) * 10;
     const z2 = z1 + (Math.random() - 0.5) * 10;
     const y = 10 + Math.random() * 15;
+
     const col = neonColors[Math.floor(Math.random() * neonColors.length)];
-    makeCable(x1, y, z1, x2, y + (Math.random() - 0.5) * 3, z2, col);
+
+    makeCable(
+      x1, y, z1,
+      x2, y + (Math.random() - 0.5) * 3, z2,
+      col
+    );
   }
+
+  // НЕ ЗАКРЫВАЙ mainGame() — продолжение в Части 3
+ // ============================================================
+// ЧАСТЬ 3 — ПЕРСОНАЖ R15, КАМЕРА, УПРАВЛЕНИЕ
+// ============================================================
+
 
   // ============================================================
   // ПЕРСОНАЖ R15 — ДЕТАЛЬНЫЙ КИБОРГ
   // ============================================================
+  // R15 = 15 частей тела:
+  // Голова, шея, UpperTorso, LowerTorso, таз,
+  // 2 плеча (Shoulder+UpperArm), 2 предплечья (LowerArm),
+  // 2 кисти (Hand) с пальцами,
+  // 2 бедра (UpperLeg), 2 голени (LowerLeg),
+  // 2 стопы (Foot)
+  // ============================================================
+
   const player = new THREE.Group();
   player.position.set(0, 0, 0);
 
-  // === Материалы ===
-  const M_dark  = new THREE.MeshStandardMaterial({ color:0x0d0d18, metalness:0.95, roughness:0.25, emissive:0x001122, emissiveIntensity:0.2 });
-  const M_mid   = new THREE.MeshStandardMaterial({ color:0x1c1c2e, metalness:0.9,  roughness:0.3,  emissive:0x000022, emissiveIntensity:0.15 });
-  const M_armor = new THREE.MeshStandardMaterial({ color:0x0a0a14, metalness:1.0,  roughness:0.15, emissive:0x00ffff, emissiveIntensity:0.12 });
+
+  // ------------------------------------------------------------
+  // МАТЕРИАЛЫ ПЕРСОНАЖА
+  // ------------------------------------------------------------
+  const M_dark = new THREE.MeshStandardMaterial({
+    color: 0x0d0d18, metalness: 0.95, roughness: 0.25,
+    emissive: 0x001122, emissiveIntensity: 0.2
+  });
+  const M_mid = new THREE.MeshStandardMaterial({
+    color: 0x1c1c2e, metalness: 0.9, roughness: 0.3,
+    emissive: 0x000022, emissiveIntensity: 0.15
+  });
+  const M_armor = new THREE.MeshStandardMaterial({
+    color: 0x0a0a14, metalness: 1.0, roughness: 0.15,
+    emissive: 0x00ffff, emissiveIntensity: 0.12
+  });
   const M_glowC = new THREE.MeshBasicMaterial({ color: 0x00ffff });
   const M_glowP = new THREE.MeshBasicMaterial({ color: 0xff00ff });
   const M_glowG = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
   const M_glowO = new THREE.MeshBasicMaterial({ color: 0xff8800 });
   const M_white = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-  // === КОРЕНЬ ===
+
+  // ------------------------------------------------------------
+  // КОРЕНЬ СКЕЛЕТА
+  // ------------------------------------------------------------
   const root = new THREE.Group();
   player.add(root);
 
-  // === LOWER TORSO (таз) ===
+
+  // ============================================================
+  // LOWER TORSO (таз) — часть №1-2
+  // ============================================================
   const lowerTorso = new THREE.Group();
   lowerTorso.position.y = 0.95;
   root.add(lowerTorso);
 
-  const pelvisMesh = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.32, 0.36), M_mid);
+  // Основной блок таза
+  const pelvisMesh = new THREE.Mesh(
+    new THREE.BoxGeometry(0.52, 0.32, 0.36),
+    M_mid
+  );
   pelvisMesh.castShadow = true;
   lowerTorso.add(pelvisMesh);
 
-  const belt = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.1, 0.4), M_armor);
+  // Пояс
+  const belt = new THREE.Mesh(
+    new THREE.BoxGeometry(0.58, 0.1, 0.4),
+    M_armor
+  );
   belt.position.y = 0.15;
   lowerTorso.add(belt);
 
-  const beltGlow = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.42), M_glowC);
+  // Светящаяся полоса на поясе
+  const beltGlow = new THREE.Mesh(
+    new THREE.BoxGeometry(0.6, 0.04, 0.42),
+    M_glowC
+  );
   beltGlow.position.y = 0.15;
   lowerTorso.add(beltGlow);
 
-  // === UPPER TORSO ===
+  // Маленькая капсула сбоку пояса (аптечка)
+  const capsule = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.06, 0.06, 0.2, 8),
+    M_glowG
+  );
+  capsule.rotation.z = Math.PI / 2;
+  capsule.position.set(0.35, 0, 0);
+  lowerTorso.add(capsule);
+
+
+  // ============================================================
+  // UPPER TORSO — часть №3
+  // ============================================================
   const upperTorso = new THREE.Group();
   upperTorso.position.y = 0.3;
   lowerTorso.add(upperTorso);
 
-  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.44), M_mid);
+  // Главный корпус (грудь)
+  const chest = new THREE.Mesh(
+    new THREE.BoxGeometry(0.72, 0.72, 0.44),
+    M_mid
+  );
   chest.position.y = 0.3;
   chest.castShadow = true;
   upperTorso.add(chest);
 
-  // Передние броневые пластины
-  const plate1 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.28, 0.09), M_armor);
+  // Передние броневые пластины (3 шт)
+  const plate1 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 0.28, 0.09),
+    M_armor
+  );
   plate1.position.set(0, 0.5, 0.24);
   upperTorso.add(plate1);
 
-  const plate2 = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.22, 0.09), M_armor);
+  const plate2 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.52, 0.22, 0.09),
+    M_armor
+  );
   plate2.position.set(0, 0.2, 0.24);
   upperTorso.add(plate2);
 
-  const plate3 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.18, 0.09), M_armor);
+  const plate3 = new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 0.18, 0.09),
+    M_armor
+  );
   plate3.position.set(0, -0.05, 0.24);
   upperTorso.add(plate3);
 
-  // Реактор-сердце
+  // Реактор-сердце (внешнее кольцо)
   const coreOuter = new THREE.Mesh(
     new THREE.CylinderGeometry(0.14, 0.14, 0.1, 20),
     M_glowC
@@ -641,6 +1506,7 @@ function mainGame() {
   coreOuter.position.set(0, 0.36, 0.27);
   upperTorso.add(coreOuter);
 
+  // Реактор-сердце (внутренний белый)
   const coreInner = new THREE.Mesh(
     new THREE.CylinderGeometry(0.06, 0.06, 0.12, 16),
     M_white
@@ -649,6 +1515,7 @@ function mainGame() {
   coreInner.position.set(0, 0.36, 0.28);
   upperTorso.add(coreInner);
 
+  // Вращающееся кольцо-пушка вокруг реактора
   const coreRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.19, 0.025, 8, 24),
     M_glowP
@@ -656,8 +1523,11 @@ function mainGame() {
   coreRing.position.set(0, 0.36, 0.28);
   upperTorso.add(coreRing);
 
-  // Ремни безопасности
-  const beltL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.05), M_armor);
+  // Ремни безопасности (по диагонали)
+  const beltL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.06, 0.5, 0.05),
+    M_armor
+  );
   beltL.position.set(-0.15, 0.3, 0.25);
   beltL.rotation.z = 0.3;
   upperTorso.add(beltL);
@@ -667,8 +1537,11 @@ function mainGame() {
   beltR.rotation.z = -0.3;
   upperTorso.add(beltR);
 
-  // Плечи
-  const shL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.3, 0.42), M_armor);
+  // Плечи — массивные наплечники
+  const shL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32, 0.3, 0.42),
+    M_armor
+  );
   shL.position.set(-0.5, 0.5, 0);
   shL.castShadow = true;
   upperTorso.add(shL);
@@ -678,7 +1551,10 @@ function mainGame() {
   upperTorso.add(shR);
 
   // Светящиеся накладки на плечах
-  const shGlowL = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.08, 0.44), M_glowC);
+  const shGlowL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.34, 0.08, 0.44),
+    M_glowC
+  );
   shGlowL.position.set(-0.5, 0.66, 0);
   upperTorso.add(shGlowL);
 
@@ -686,7 +1562,22 @@ function mainGame() {
   shGlowR.position.x = 0.5;
   upperTorso.add(shGlowR);
 
-  // === ШЕЯ ===
+  // Наплечные болты (декор)
+  for (let s = -1; s <= 1; s += 2) {
+    for (let i = -1; i <= 1; i += 2) {
+      const bolt = new THREE.Mesh(
+        new THREE.SphereGeometry(0.03, 6, 6),
+        M_glowG
+      );
+      bolt.position.set(s * 0.5, 0.5, i * 0.15);
+      upperTorso.add(bolt);
+    }
+  }
+
+
+  // ============================================================
+  // ШЕЯ — часть №4
+  // ============================================================
   const neck = new THREE.Mesh(
     new THREE.CylinderGeometry(0.11, 0.14, 0.12, 14),
     M_dark
@@ -694,22 +1585,35 @@ function mainGame() {
   neck.position.y = 0.72;
   upperTorso.add(neck);
 
-  // === ГОЛОВА ===
+
+  // ============================================================
+  // ГОЛОВА — часть №5
+  // ============================================================
   const headGroup = new THREE.Group();
   headGroup.position.y = 0.9;
   upperTorso.add(headGroup);
 
-  const skull = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.48, 0.44), M_dark);
+  // Череп
+  const skull = new THREE.Mesh(
+    new THREE.BoxGeometry(0.44, 0.48, 0.44),
+    M_dark
+  );
   skull.castShadow = true;
   headGroup.add(skull);
 
-  // Затылок
-  const backHead = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.4, 0.08), M_armor);
+  // Затылок (броня)
+  const backHead = new THREE.Mesh(
+    new THREE.BoxGeometry(0.36, 0.4, 0.08),
+    M_armor
+  );
   backHead.position.z = -0.23;
   headGroup.add(backHead);
 
-  // Боковые вставки
-  const earL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.24, 0.3), M_armor);
+  // Боковые вставки (наушники)
+  const earL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.09, 0.24, 0.3),
+    M_armor
+  );
   earL.position.set(-0.26, 0.02, 0);
   headGroup.add(earL);
 
@@ -717,8 +1621,11 @@ function mainGame() {
   earR.position.x = 0.26;
   headGroup.add(earR);
 
-  // Неоновые наушники
-  const earGlowL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.16), M_glowP);
+  // Неоновые вставки на наушниках
+  const earGlowL = new THREE.Mesh(
+    new THREE.BoxGeometry(0.05, 0.1, 0.16),
+    M_glowP
+  );
   earGlowL.position.set(-0.29, 0.08, 0);
   headGroup.add(earGlowL);
 
@@ -726,16 +1633,27 @@ function mainGame() {
   earGlowR.position.x = 0.29;
   headGroup.add(earGlowR);
 
-  // Визор
-  const visorBack = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.14, 0.08), M_dark);
+  // Визор (задняя тёмная часть)
+  const visorBack = new THREE.Mesh(
+    new THREE.BoxGeometry(0.48, 0.14, 0.08),
+    M_dark
+  );
   visorBack.position.set(0, 0.06, 0.22);
   headGroup.add(visorBack);
 
-  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, 0.05), M_glowC);
+  // Визор (светящаяся голубая полоса)
+  const visor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.44, 0.08, 0.05),
+    M_glowC
+  );
   visor.position.set(0, 0.06, 0.25);
   headGroup.add(visor);
 
-  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), M_glowP);
+  // 2 светящихся глаза
+  const eyeL = new THREE.Mesh(
+    new THREE.SphereGeometry(0.028, 8, 8),
+    M_glowP
+  );
   eyeL.position.set(-0.11, 0.06, 0.28);
   headGroup.add(eyeL);
 
@@ -744,11 +1662,14 @@ function mainGame() {
   headGroup.add(eyeR);
 
   // Маска-респиратор
-  const mask = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.16, 0.12), M_armor);
+  const mask = new THREE.Mesh(
+    new THREE.BoxGeometry(0.3, 0.16, 0.12),
+    M_armor
+  );
   mask.position.set(0, -0.14, 0.22);
   headGroup.add(mask);
 
-  // Трубки респиратора
+  // Трубки респиратора (2 шт — по бокам маски)
   for (let s = -1; s <= 1; s += 2) {
     const tube = new THREE.Mesh(
       new THREE.CylinderGeometry(0.022, 0.022, 0.2, 6),
@@ -759,61 +1680,117 @@ function mainGame() {
     headGroup.add(tube);
   }
 
-  // Антенна
-  const antBase = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6), M_dark);
+  // Маленькие вентиляционные отверстия на маске
+  for (let i = -1; i <= 1; i++) {
+    const vent = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.02, 0.02),
+      M_glowG
+    );
+    vent.position.set(i * 0.06, -0.14, 0.29);
+    headGroup.add(vent);
+  }
+
+  // Антенна-сканирование
+  const antBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6),
+    M_dark
+  );
   antBase.position.set(0.16, 0.29, 0);
   headGroup.add(antBase);
 
-  const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 6), M_glowO);
+  const antRod = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.012, 0.012, 0.3, 6),
+    M_glowO
+  );
   antRod.position.set(0.16, 0.48, 0);
   headGroup.add(antRod);
 
-  const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), M_glowO);
+  const antTip = new THREE.Mesh(
+    new THREE.SphereGeometry(0.04, 8, 8),
+    M_glowO
+  );
   antTip.position.set(0.16, 0.65, 0);
   headGroup.add(antTip);
 
+
   // ============================================================
-  // R15 РУКА: Shoulder → UpperArm → Elbow → LowerArm → Wrist → Hand
+  // R15 РУКА — части №6-11
+  // Shoulder → UpperArm → Elbow → LowerArm → Wrist → Hand
   // ============================================================
   function makeArm(side) {
+    // ПЛЕЧО (ShoulderJoint + UpperArm)
     const shoulder = new THREE.Group();
     shoulder.position.set(side * 0.6, 0.5, 0);
     upperTorso.add(shoulder);
 
-    const shJoint = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), M_armor);
+    // Шаровой сустав
+    const shJoint = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 10, 10),
+      M_armor
+    );
     shoulder.add(shJoint);
 
-    const upperArm = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.45, 0.24), M_mid);
+    // Верхняя часть руки
+    const upperArm = new THREE.Mesh(
+      new THREE.BoxGeometry(0.22, 0.45, 0.24),
+      M_mid
+    );
     upperArm.position.y = -0.28;
     upperArm.castShadow = true;
     shoulder.add(upperArm);
 
+    // Неоновая полоса на верхней части
+    const armUpperGlow = new THREE.Mesh(
+      new THREE.BoxGeometry(0.23, 0.05, 0.02),
+      M_glowC
+    );
+    armUpperGlow.position.set(0, -0.28, 0.13);
+    shoulder.add(armUpperGlow);
+
+    // ЛОКОТЬ (ElbowJoint)
     const elbow = new THREE.Group();
     elbow.position.y = -0.55;
     shoulder.add(elbow);
 
-    const elJoint = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), M_armor);
+    const elJoint = new THREE.Mesh(
+      new THREE.SphereGeometry(0.11, 10, 10),
+      M_armor
+    );
     elbow.add(elJoint);
 
-    const lowerArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.22), M_dark);
+    // ПРЕДПЛЕЧЬЕ (LowerArm)
+    const lowerArm = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, 0.5, 0.22),
+      M_dark
+    );
     lowerArm.position.y = -0.3;
     lowerArm.castShadow = true;
     elbow.add(lowerArm);
 
-    // Имплант-лазер
-    const laserBox = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.24, 0.32), M_armor);
+    // Имплант-лазер (блок на предплечье)
+    const laserBox = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.24, 0.32),
+      M_armor
+    );
     laserBox.position.set(0, -0.28, 0.02);
     elbow.add(laserBox);
 
-    const ls1 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.02), M_glowG);
+    // Золотые светящиеся полосы на импланте
+    const ls1 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.04, 0.02),
+      M_glowG
+    );
     ls1.position.set(0, -0.22, 0.18);
     elbow.add(ls1);
 
-    const ls2 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.02), M_glowG);
+    const ls2 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.04, 0.02),
+      M_glowG
+    );
     ls2.position.set(0, -0.34, 0.18);
     elbow.add(ls2);
 
-    // Дуло
+    // Дуло импланта (цилиндр вперёд)
     const barrel = new THREE.Mesh(
       new THREE.CylinderGeometry(0.055, 0.06, 0.2, 12),
       M_glowG
@@ -822,44 +1799,71 @@ function mainGame() {
     barrel.position.set(0, -0.28, 0.24);
     elbow.add(barrel);
 
-    const barrelTip = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), M_glowO);
+    // Светящийся кончик дула
+    const barrelTip = new THREE.Mesh(
+      new THREE.SphereGeometry(0.065, 10, 10),
+      M_glowO
+    );
     barrelTip.position.set(0, -0.28, 0.35);
     elbow.add(barrelTip);
 
-    // Wrist
-    const wrist = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), M_armor);
+    // ЗАПЯСТЬЕ (WristJoint)
+    const wrist = new THREE.Mesh(
+      new THREE.SphereGeometry(0.08, 8, 8),
+      M_armor
+    );
     wrist.position.y = -0.62;
     elbow.add(wrist);
 
-    // Hand (кисть с пальцами)
+    // КИСТЬ (Hand) — часть №11
     const hand = new THREE.Group();
     hand.position.y = -0.72;
     elbow.add(hand);
 
-    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.22), M_dark);
+    // Ладонь
+    const palm = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.12, 0.22),
+      M_dark
+    );
     hand.add(palm);
 
-    // 4 пальца + большой
+    // 4 пальца (каждый с 2 фалангами + светящийся кончик)
     for (let i = 0; i < 4; i++) {
-      const fg = new THREE.Group();
-      fg.position.set(-0.06 + i * 0.04, -0.09, 0.04);
+      const fingerGroup = new THREE.Group();
+      fingerGroup.position.set(-0.06 + i * 0.04, -0.09, 0.04);
 
-      const f1 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.07, 0.04), M_dark);
+      // 1-я фаланга
+      const f1 = new THREE.Mesh(
+        new THREE.BoxGeometry(0.035, 0.07, 0.04),
+        M_dark
+      );
       f1.position.y = -0.035;
-      fg.add(f1);
+      fingerGroup.add(f1);
 
-      const f2 = new THREE.Mesh(new THREE.BoxGeometry(0.033, 0.06, 0.038), M_armor);
+      // 2-я фаланга
+      const f2 = new THREE.Mesh(
+        new THREE.BoxGeometry(0.033, 0.06, 0.038),
+        M_armor
+      );
       f2.position.y = -0.1;
-      fg.add(f2);
+      fingerGroup.add(f2);
 
-      const fTip = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), M_glowP);
+      // Светящийся кончик
+      const fTip = new THREE.Mesh(
+        new THREE.SphereGeometry(0.02, 6, 6),
+        M_glowP
+      );
       fTip.position.y = -0.135;
-      fg.add(fTip);
+      fingerGroup.add(fTip);
 
-      hand.add(fg);
+      hand.add(fingerGroup);
     }
 
-    const thumb = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.09, 0.045), M_dark);
+    // Большой палец
+    const thumb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.045, 0.09, 0.045),
+      M_dark
+    );
     thumb.position.set(side * -0.09, -0.07, 0);
     hand.add(thumb);
 
@@ -869,57 +1873,108 @@ function mainGame() {
   const armL = makeArm(-1);
   const armR = makeArm(1);
 
+
   // ============================================================
-  // R15 НОГА: Hip → UpperLeg → Knee → LowerLeg → Ankle → Foot
+  // R15 НОГА — части №12-15
+  // Hip → UpperLeg → Knee → LowerLeg → Ankle → Foot
   // ============================================================
   function makeLeg(side) {
+    // БЕДРО (HipJoint + UpperLeg)
     const hip = new THREE.Group();
     hip.position.set(side * 0.19, 0.82, 0);
     root.add(hip);
 
-    const hipJoint = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), M_armor);
+    // Шаровой сустав
+    const hipJoint = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 10, 10),
+      M_armor
+    );
     hip.add(hipJoint);
 
-    const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 0.32), M_mid);
+    // Верхняя часть ноги (бедро)
+    const upperLeg = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.5, 0.32),
+      M_mid
+    );
     upperLeg.position.y = -0.3;
     upperLeg.castShadow = true;
     hip.add(upperLeg);
 
-    const thighArmor = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 0.34), M_armor);
+    // Броня на бедре
+    const thighArmor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.32, 0.2, 0.34),
+      M_armor
+    );
     thighArmor.position.y = -0.22;
     hip.add(thighArmor);
 
-    const thighRing = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.02, 6, 16), M_glowC);
+    // Кольцо-неон на бедре
+    const thighRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.17, 0.02, 6, 16),
+      M_glowC
+    );
     thighRing.rotation.x = Math.PI / 2;
     thighRing.position.y = -0.36;
     hip.add(thighRing);
 
+    // КОЛЕНО (KneeJoint)
     const knee = new THREE.Group();
     knee.position.y = -0.6;
     hip.add(knee);
 
-    const kneeJoint = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), M_armor);
+    const kneeJoint = new THREE.Mesh(
+      new THREE.SphereGeometry(0.13, 10, 10),
+      M_armor
+    );
     knee.add(kneeJoint);
 
-    const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.52, 0.28), M_dark);
+    // ГОЛЕНЬ (LowerLeg)
+    const lowerLeg = new THREE.Mesh(
+      new THREE.BoxGeometry(0.26, 0.52, 0.28),
+      M_dark
+    );
     lowerLeg.position.y = -0.32;
     lowerLeg.castShadow = true;
     knee.add(lowerLeg);
 
-    const shinGlow = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.42, 0.04), M_glowC);
+    // Неоновая полоса на голени
+    const shinGlow = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.42, 0.04),
+      M_glowC
+    );
     shinGlow.position.set(side * 0.11, -0.32, 0.13);
     knee.add(shinGlow);
 
-    const ankle = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), M_armor);
+    // Вторая полоса (внутренняя)
+    const shinGlow2 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.05, 0.3, 0.04),
+      M_glowP
+    );
+    shinGlow2.position.set(-side * 0.11, -0.32, 0.13);
+    knee.add(shinGlow2);
+
+    // ЛОДЫЖКА (AnkleJoint)
+    const ankle = new THREE.Mesh(
+      new THREE.SphereGeometry(0.1, 8, 8),
+      M_armor
+    );
     ankle.position.y = -0.62;
     knee.add(ankle);
 
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.44), M_armor);
+    // СТОПА (Foot)
+    const foot = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.14, 0.44),
+      M_armor
+    );
     foot.position.set(0, -0.72, 0.06);
     foot.castShadow = true;
     knee.add(foot);
 
-    const sole = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.44), M_glowP);
+    // Светящаяся подошва
+    const sole = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.03, 0.44),
+      M_glowP
+    );
     sole.position.set(0, -0.8, 0.06);
     knee.add(sole);
 
@@ -929,29 +1984,48 @@ function mainGame() {
   const legL = makeLeg(-1);
   const legR = makeLeg(1);
 
+  // Добавляем игрока в сцену
   scene.add(player);
 
-  // ============================================================
-  // СОСТОЯНИЕ КАМЕРЫ И УПРАВЛЕНИЯ
-  // ============================================================
-  let yaw = 0;
-  let pitch = 0.3;
-  const PITCH_MIN = -0.2, PITCH_MAX = 1.1;
-  let cameraDistance = 7;
-  let isLocked = false;
 
+  // ============================================================
+  // КАМЕРА — ОРБИТАЛЬНАЯ, ВОКРУГ ПЕРСОНАЖА
+  // ============================================================
+  let yaw = 0;                 // горизонтальный угол
+  let pitch = 0.3;             // вертикальный угол
+  const PITCH_MIN = -0.2;
+  const PITCH_MAX = 1.1;
+  let cameraDistance = 7;      // дистанция камеры
+  let isLocked = false;        // захвачена ли мышь
+
+
+  // ------------------------------------------------------------
+  // POINTER LOCK — захват мыши
+  // ------------------------------------------------------------
   const lockHint = document.getElementById('lockHint');
 
-  document.addEventListener('pointerlockchange', () => {
+  document.addEventListener('pointerlockchange', function() {
     isLocked = document.pointerLockElement === renderer.domElement;
     lockHint.style.display = isLocked ? 'none' : 'block';
   });
 
-  renderer.domElement.addEventListener('click', () => {
-    if (!isLocked) renderer.domElement.requestPointerLock();
+  renderer.domElement.addEventListener('click', function() {
+    if (!isLocked) {
+      renderer.domElement.requestPointerLock();
+    }
   });
 
-  document.addEventListener('mousemove', (e) => {
+  // Показываем подсказку при старте
+  lockHint.style.display = 'block';
+  lockHint.addEventListener('click', function() {
+    renderer.domElement.requestPointerLock();
+  });
+
+
+  // ------------------------------------------------------------
+  // МЫШЬ — поворот камеры
+  // ------------------------------------------------------------
+  document.addEventListener('mousemove', function(e) {
     if (!isLocked) return;
     const sens = 0.0022;
     yaw -= e.movementX * sens;
@@ -959,29 +2033,861 @@ function mainGame() {
     pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch));
   });
 
-  addEventListener('wheel', (e) => {
+
+  // ------------------------------------------------------------
+  // КОЛЕСО — зум камеры
+  // ------------------------------------------------------------
+  addEventListener('wheel', function(e) {
     cameraDistance += e.deltaY * 0.005;
     cameraDistance = Math.max(3, Math.min(14, cameraDistance));
   }, { passive: true });
 
+
+  // ------------------------------------------------------------
+  // КЛАВИАТУРА
+  // ------------------------------------------------------------
   const keys = {};
-  addEventListener('keydown', e => keys[e.code] = true);
-  addEventListener('keyup', e => keys[e.code] = false);
-1. <!DOCTYPE html> ... <style>              ← Часть 1
-2. <body>, меню, HUD-элементы               ← Часть 1
-3. <script src="three.min.js">              ← Часть 1
-4. <script>
-   ├─ Аудио, обработчики ошибок            ← Часть 1
-   ├─ initMenu(), startGame()               ← Часть 1
-   │
-   ├─ function mainGame() {                 ← Часть 2
-   │    сцена, свет, город 40×40,           ← Часть 2
-   │    персонаж R15, камера                ← Часть 2
-   │                                        ← Часть 2
-   │    роботы, лазеры, мины,               ← Часть 3
-   │    HUD, цикл, волны, боссы, финал      ← Часть 3
-   │  }                                     ← Часть 3
-   </script>                                ← Часть 3
-</body>                                     ← Часть 3
-</html>                                     ← Часть 3
- 
+  addEventListener('keydown', function(e) { keys[e.code] = true; });
+  addEventListener('keyup',   function(e) { keys[e.code] = false; });
+
+  // НЕ ЗАКРЫВАЙ mainGame() — продолжение в Части 4
+ // ============================================================
+// ЧАСТЬ 4 — ВРАГИ, ЛАЗЕРЫ, МИНЫ, БОНУСЫ, HUD
+// ============================================================
+
+
+  // ============================================================
+  // ВРАГИ — 20 ВИДОВ ЛЕТАЮЩИХ РОБОТОВ С НОЖАМИ
+  // ============================================================
+  const enemies = [];
+
+  // Все 20 видов роботов — разные цвета, размеры, характеристики
+  const robotStyles = [
+    { name:'Scout',     color:0xff0055, size:0.85, hp:35,  speed:2.6, dmg:8,  acc:0xff2277 },
+    { name:'Bruiser',   color:0xff4400, size:1.15, hp:75,  speed:1.6, dmg:14, acc:0xff7722 },
+    { name:'Drone',     color:0x00ffff, size:0.75, hp:25,  speed:3.4, dmg:6,  acc:0x88ffff },
+    { name:'Sentinel',  color:0x00ff88, size:1.0,  hp:55,  speed:2.0, dmg:10, acc:0x88ffcc },
+    { name:'Striker',   color:0xff00ff, size:0.95, hp:50,  speed:2.7, dmg:12, acc:0xff88ff },
+    { name:'Warden',    color:0xaa00ff, size:1.2,  hp:85,  speed:1.5, dmg:16, acc:0xcc88ff },
+    { name:'Reaper',    color:0xff2200, size:1.05, hp:60,  speed:2.3, dmg:15, acc:0xff6644 },
+    { name:'Phantom',   color:0x8800ff, size:0.85, hp:40,  speed:3.1, dmg:9,  acc:0xbb88ff },
+    { name:'Titan',     color:0xffaa00, size:1.4,  hp:110, speed:1.3, dmg:18, acc:0xffcc66 },
+    { name:'Spider',    color:0x00ff44, size:0.75, hp:30,  speed:3.0, dmg:7,  acc:0x88ffaa },
+    { name:'Crusher',   color:0xff0066, size:1.3,  hp:95,  speed:1.5, dmg:20, acc:0xff44aa },
+    { name:'Wasp',      color:0xffee00, size:0.6,  hp:20,  speed:3.7, dmg:5,  acc:0xffff88 },
+    { name:'Golem',     color:0x884400, size:1.5,  hp:130, speed:1.1, dmg:22, acc:0xcc8844 },
+    { name:'Assassin',  color:0x0000ff, size:0.9,  hp:45,  speed:3.4, dmg:13, acc:0x6688ff },
+    { name:'Enforcer',  color:0x00aaff, size:1.1,  hp:70,  speed:1.8, dmg:12, acc:0x66ccff },
+    { name:'Harbinger', color:0xff0088, size:1.25, hp:90,  speed:1.7, dmg:17, acc:0xff66bb },
+    { name:'Specter',   color:0x44ffaa, size:0.8,  hp:28,  speed:3.3, dmg:8,  acc:0x88ffcc },
+    { name:'Destroyer', color:0xff3300, size:1.35, hp:100, speed:1.4, dmg:19, acc:0xff7744 },
+    { name:'Nano',      color:0xffffff, size:0.6,  hp:22,  speed:3.6, dmg:6,  acc:0xcccccc },
+    { name:'Overlord',  color:0xff00aa, size:1.6,  hp:160, speed:1.0, dmg:25, acc:0xff66dd },
+  ];
+
+
+  // ------------------------------------------------------------
+  // СВЕТЯЩИЙСЯ НОЖ
+  // ------------------------------------------------------------
+  function makeKnife(color) {
+    const g = new THREE.Group();
+
+    // Рукоять
+    const hilt = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.22, 0.06),
+      new THREE.MeshStandardMaterial({
+        color: 0x111111, metalness: 1, roughness: 0.3
+      })
+    );
+    g.add(hilt);
+
+    // Гарда
+    const guard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.03, 0.08),
+      new THREE.MeshStandardMaterial({
+        color: 0x222222, metalness: 1, roughness: 0.2
+      })
+    );
+    guard.position.y = 0.11;
+    g.add(guard);
+
+    // Лезвие (светящееся)
+    const blade = new THREE.Mesh(
+      new THREE.ConeGeometry(0.05, 0.5, 4),
+      new THREE.MeshBasicMaterial({ color: color })
+    );
+    blade.position.y = 0.4;
+    g.add(blade);
+
+    // Ореол вокруг лезвия
+    const bladeGlow = new THREE.Mesh(
+      new THREE.ConeGeometry(0.09, 0.55, 4),
+      new THREE.MeshBasicMaterial({
+        color: color, transparent: true, opacity: 0.35
+      })
+    );
+    bladeGlow.position.y = 0.4;
+    g.add(bladeGlow);
+
+    return g;
+  }
+
+
+  // ------------------------------------------------------------
+  // СОЗДАНИЕ ОДНОГО РОБОТА
+  // ------------------------------------------------------------
+  function createRobot(style, isBoss) {
+    const scale = isBoss ? 2.3 : 1;
+    const group = new THREE.Group();
+
+    const cMain = style.color;
+    const cAcc = style.acc;
+
+    const mBody = new THREE.MeshStandardMaterial({
+      color: cMain, metalness: 0.9, roughness: 0.28,
+      emissive: cMain, emissiveIntensity: 0.4
+    });
+    const mDark = new THREE.MeshStandardMaterial({
+      color: 0x0a0a14, metalness: 0.95, roughness: 0.2,
+      emissive: cAcc, emissiveIntensity: 0.18
+    });
+    const mAcc = new THREE.MeshBasicMaterial({ color: cAcc });
+    const mEye = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    // ЯДРО — светящийся шар по центру
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(0.2 * scale, 12, 12),
+      mAcc
+    );
+    core.position.y = 1.5 * scale;
+    group.add(core);
+
+    // ПЛАЗМЕННАЯ АУРА — прозрачная сфера вокруг ядра
+    const aura = new THREE.Mesh(
+      new THREE.SphereGeometry(0.4 * scale, 14, 14),
+      new THREE.MeshBasicMaterial({
+        color: cAcc, transparent: true, opacity: 0.15
+      })
+    );
+    aura.position.y = 1.5 * scale;
+    group.add(aura);
+
+    // ГРАВИТАЦИОННЫЕ КОЛЬЦА (2 шт)
+    const ring1 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.7 * scale, 0.04 * scale, 6, 24),
+      mAcc
+    );
+    ring1.rotation.x = Math.PI / 2;
+    ring1.position.y = 1.5 * scale;
+    group.add(ring1);
+
+    const ring2 = new THREE.Mesh(
+      new THREE.TorusGeometry(0.9 * scale, 0.03 * scale, 6, 24),
+      mAcc
+    );
+    ring2.rotation.x = Math.PI / 2;
+    ring2.position.y = 1.5 * scale;
+    group.add(ring2);
+
+    // РУКИ С НОЖАМИ (2 шт)
+    for (let s = -1; s <= 1; s += 2) {
+      const armGroup = new THREE.Group();
+      armGroup.position.set(s * 0.35 * scale, 1.5 * scale, 0);
+
+      // Верхняя часть руки
+      const upper = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14 * scale, 0.5 * scale, 0.14 * scale),
+        mBody
+      );
+      upper.position.y = -0.25 * scale;
+      upper.castShadow = true;
+      armGroup.add(upper);
+
+      // Локоть
+      const el = new THREE.Mesh(
+        new THREE.SphereGeometry(0.09 * scale, 8, 8),
+        mDark
+      );
+      el.position.y = -0.5 * scale;
+      armGroup.add(el);
+
+      // Предплечье
+      const fore = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12 * scale, 0.45 * scale, 0.12 * scale),
+        mDark
+      );
+      fore.position.y = -0.75 * scale;
+      armGroup.add(fore);
+
+      // Кисть
+      const hand = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14 * scale, 0.12 * scale, 0.14 * scale),
+        mBody
+      );
+      hand.position.y = -1.0 * scale;
+      armGroup.add(hand);
+
+      // Нож в руке
+      const knife = makeKnife(cAcc);
+      knife.scale.setScalar(scale * 1.2);
+      knife.position.y = -1.15 * scale;
+      knife.rotation.x = Math.PI; // острие вниз
+      armGroup.add(knife);
+
+      group.add(armGroup);
+
+      if (s === 1) group.userData.rightArm = armGroup;
+      else group.userData.leftArm = armGroup;
+    }
+
+    // ТОРС
+    const torso = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5 * scale, 0.5 * scale, 0.4 * scale),
+      mBody
+    );
+    torso.position.y = 1.5 * scale;
+    torso.castShadow = true;
+    group.add(torso);
+
+    // ГОЛОВА
+    const head = new THREE.Mesh(
+      new THREE.BoxGeometry(0.4 * scale, 0.38 * scale, 0.4 * scale),
+      mDark
+    );
+    head.position.y = 2.0 * scale;
+    head.castShadow = true;
+    group.add(head);
+
+    // ВИЗОР (светящаяся полоса)
+    const visor = new THREE.Mesh(
+      new THREE.BoxGeometry(0.35 * scale, 0.1 * scale, 0.05 * scale),
+      mEye
+    );
+    visor.position.set(0, 2.02 * scale, 0.22 * scale);
+    group.add(visor);
+
+    // 2 маленьких глаза
+    const e1 = new THREE.Mesh(
+      new THREE.SphereGeometry(0.03 * scale, 8, 8),
+      mEye
+    );
+    e1.position.set(-0.08 * scale, 2.02 * scale, 0.25 * scale);
+    group.add(e1);
+
+    const e2 = e1.clone();
+    e2.position.x = 0.08 * scale;
+    group.add(e2);
+
+    // АНТЕННА
+    const antRod = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.015 * scale, 0.015 * scale, 0.28 * scale, 6),
+      mAcc
+    );
+    antRod.position.set(0.14 * scale, 2.35 * scale, 0);
+    group.add(antRod);
+
+    const antTip = new THREE.Mesh(
+      new THREE.SphereGeometry(0.045 * scale, 8, 8),
+      mAcc
+    );
+    antTip.position.set(0.14 * scale, 2.5 * scale, 0);
+    group.add(antTip);
+
+    // НОГИ (висят внизу)
+    for (let s = -1; s <= 1; s += 2) {
+      const legGroup = new THREE.Group();
+      legGroup.position.set(s * 0.15 * scale, 1.15 * scale, 0);
+
+      const thigh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.16 * scale, 0.4 * scale, 0.16 * scale),
+        mBody
+      );
+      thigh.position.y = -0.2 * scale;
+      legGroup.add(thigh);
+
+      const knee = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08 * scale, 8, 8),
+        mDark
+      );
+      knee.position.y = -0.45 * scale;
+      legGroup.add(knee);
+
+      const shin = new THREE.Mesh(
+        new THREE.BoxGeometry(0.14 * scale, 0.4 * scale, 0.14 * scale),
+        mDark
+      );
+      shin.position.y = -0.65 * scale;
+      legGroup.add(shin);
+
+      const foot = new THREE.Mesh(
+        new THREE.BoxGeometry(0.18 * scale, 0.1 * scale, 0.3 * scale),
+        mBody
+      );
+      foot.position.set(0, -0.9 * scale, 0.05 * scale);
+      legGroup.add(foot);
+
+      group.add(legGroup);
+    }
+
+    // КОРОНА БОССА
+    if (isBoss) {
+      const crown = new THREE.Mesh(
+        new THREE.TorusGeometry(0.6 * scale, 0.06, 8, 20),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      crown.rotation.x = Math.PI / 2;
+      crown.position.y = 2.8 * scale;
+      group.add(crown);
+      group.userData.crown = crown;
+    }
+
+    group.userData.ring1 = ring1;
+    group.userData.ring2 = ring2;
+    group.userData.core = core;
+    group.userData.aura = aura;
+
+    return group;
+  }
+
+
+  // ------------------------------------------------------------
+  // СПАВН ОДНОГО ВРАГА
+  // ------------------------------------------------------------
+  function spawnEnemy(idx, pos, isBoss) {
+    const style = robotStyles[idx % robotStyles.length];
+    const mesh = createRobot(style, isBoss);
+
+    mesh.position.copy(pos);
+    mesh.position.y = 1.5;
+    scene.add(mesh);
+
+    const e = {
+      mesh: mesh,
+      style: style,
+      hp: style.hp * (isBoss ? 12 : 1),
+      maxHp: style.hp * (isBoss ? 12 : 1),
+      speed: style.speed * (isBoss ? 0.6 : 1),
+      dmg: style.dmg * (isBoss ? 2 : 1),
+      attackCD: 0,
+      hover: Math.random() * Math.PI * 2,
+      isBoss: !!isBoss,
+      bobPhase: Math.random() * Math.PI * 2,
+      baseY: 1.5
+    };
+
+    enemies.push(e);
+    return e;
+  }
+
+
+  // ============================================================
+  // ЛАЗЕРЫ — ПЛАЗМЕННЫЕ СНАРЯДЫ (как у Злого Морти)
+  // ============================================================
+  const lasers = [];
+  const particles = [];
+  const mines = [];
+  const powerups = [];
+  let mineCooldown = 0;
+
+
+  // ------------------------------------------------------------
+  // ОГОНЬ — ПЛАЗМЕННЫЙ ШАР
+  // ------------------------------------------------------------
+  function firePlasma(origin, direction, isMega) {
+    isMega = !!isMega;
+
+    const group = new THREE.Group();
+    group.position.copy(origin);
+
+    const coreSize = isMega ? 0.9 : 0.35;
+    const glowSize = isMega ? 2.5 : 0.9;
+
+    // ЯДРО (белое или бело-золотое)
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: isMega ? 0xffffff : 0xffffaa
+    });
+    const core = new THREE.Mesh(
+      new THREE.SphereGeometry(coreSize, 16, 16),
+      coreMat
+    );
+    group.add(core);
+
+    // ВНУТРЕННИЙ СЛОЙ (золотой, полупрозрачный)
+    const innerMat = new THREE.MeshBasicMaterial({
+      color: isMega ? 0xffdd44 : 0xffaa00,
+      transparent: true, opacity: 0.6
+    });
+    const inner = new THREE.Mesh(
+      new THREE.SphereGeometry(coreSize * 1.4, 14, 14),
+      innerMat
+    );
+    group.add(inner);
+
+    // ВНЕШНИЙ ОРЕОЛ
+    const outerMat = new THREE.MeshBasicMaterial({
+      color: isMega ? 0xffaa00 : 0xff8800,
+      transparent: true, opacity: 0.28
+    });
+    const outer = new THREE.Mesh(
+      new THREE.SphereGeometry(glowSize, 16, 16),
+      outerMat
+    );
+    group.add(outer);
+
+    // ПЛАЗМЕННОЕ КОЛЬЦО поперёк направления
+    const ringGeo = new THREE.TorusGeometry(
+      glowSize * 0.9, glowSize * 0.15, 8, 24
+    );
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: isMega ? 0xffdd88 : 0xffcc44,
+      transparent: true, opacity: 0.85
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    group.add(ring);
+
+    // ХВОСТ (конус позади)
+    const tailGeo = new THREE.ConeGeometry(
+      glowSize * 0.8, glowSize * 4, 16, 1, true
+    );
+    const tailMat = new THREE.MeshBasicMaterial({
+      color: isMega ? 0xffdd44 : 0xffaa00,
+      transparent: true, opacity: 0.4
+    });
+    const tail = new THREE.Mesh(tailGeo, tailMat);
+    tail.position.z = -glowSize * 2;
+    tail.rotation.x = Math.PI / 2;
+    group.add(tail);
+
+    // ТОЧЕЧНЫЙ СВЕТ — освещает окружение
+    const light = new THREE.PointLight(
+      isMega ? 0xffdd44 : 0xffaa00,
+      isMega ? 8 : 3,
+      isMega ? 30 : 12
+    );
+    group.add(light);
+
+    // Ориентируем по направлению
+    const q = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1),
+      direction.clone().normalize()
+    );
+    group.quaternion.copy(q);
+
+    scene.add(group);
+
+    lasers.push({
+      group: group,
+      core: core,
+      inner: inner,
+      outer: outer,
+      ring: ring,
+      tail: tail,
+      light: light,
+      dir: direction.clone().normalize(),
+      speed: isMega ? 60 : 45,
+      life: isMega ? 1.5 : 2.2,
+      maxLife: isMega ? 1.5 : 2.2,
+      isMega: isMega,
+      length: isMega ? 100 : 35,
+      traveled: 0
+    });
+
+    isMega ? sfx.mega() : sfx.laser();
+  }
+
+
+  // ------------------------------------------------------------
+  // УДАЛЕНИЕ ЛАЗЕРА
+  // ------------------------------------------------------------
+  function removeLaser(idx) {
+    const L = lasers[idx];
+    if (L.group.position) {
+      for (let i = 0; i < 10; i++) {
+        spawnHitParticles(
+          L.group.position.clone(),
+          L.isMega ? 0xffdd44 : 0xffaa00
+        );
+      }
+    }
+    scene.remove(L.group);
+    lasers.splice(idx, 1);
+  }
+
+
+  // ------------------------------------------------------------
+  // ПРОВЕРКА ПОПАДАНИЙ ЛАЗЕРОВ
+  // ------------------------------------------------------------
+  function checkLaserHits() {
+    for (let li = lasers.length - 1; li >= 0; li--) {
+      const L = lasers[li];
+      const pos = L.group.position;
+      let hit = false;
+
+      for (let ei = enemies.length - 1; ei >= 0; ei--) {
+        const e = enemies[ei];
+        const eCenter = e.mesh.position.clone().add(
+          new THREE.Vector3(0, 1.5, 0)
+        );
+        const dist = pos.distanceTo(eCenter);
+        const hitR = (e.isBoss ? 2.0 : 1.2) + (L.isMega ? 2 : 0.3);
+
+        if (dist < hitR) {
+          // МЕГА-ЛАЗЕР — ваншот
+          damageEnemy(e, L.isMega ? 99999 : 20);
+          hit = true;
+          if (!L.isMega) break;
+        }
+      }
+
+      if (hit && !L.isMega) {
+        removeLaser(li);
+      }
+    }
+  }
+
+
+  // ------------------------------------------------------------
+  // УРОН ПО ВРАГУ
+  // ------------------------------------------------------------
+  function damageEnemy(e, dmg) {
+    e.hp -= dmg;
+    spawnHitParticles(
+      e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
+      e.style.acc
+    );
+    showHitmark();
+    sfx.hit();
+    if (e.hp <= 0) killEnemy(e);
+  }
+
+
+  // ------------------------------------------------------------
+  // УБИЙСТВО ВРАГА
+  // ------------------------------------------------------------
+  function killEnemy(e) {
+    scene.remove(e.mesh);
+    const i = enemies.indexOf(e);
+    if (i >= 0) enemies.splice(i, 1);
+
+    score += (10 + e.maxHp) * (e.isBoss ? 5 : 1);
+    kills++;
+    updateHUD();
+    addKillFeed(e.style.name + (e.isBoss ? ' [BOSS]' : ''));
+    sfx.explode();
+
+    const c = e.style.acc;
+    const count = e.isBoss ? 80 : 25;
+    for (let j = 0; j < count; j++) {
+      spawnHitParticles(
+        e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
+        c
+      );
+    }
+  }
+
+
+  // ------------------------------------------------------------
+  // ЧАСТИЦЫ ПОПАДАНИЯ / ВЗРЫВА
+  // ------------------------------------------------------------
+  function spawnHitParticles(pos, color) {
+    for (let i = 0; i < 4; i++) {
+      const p = new THREE.Mesh(
+        new THREE.SphereGeometry(0.08, 4, 4),
+        new THREE.MeshBasicMaterial({ color: color, transparent: true })
+      );
+      p.position.copy(pos);
+
+      const vel = new THREE.Vector3(
+        (Math.random() - 0.5) * 5,
+        Math.random() * 3.5,
+        (Math.random() - 0.5) * 5
+      );
+
+      scene.add(p);
+      particles.push({
+        mesh: p, vel: vel, life: 0.7, maxLife: 0.7
+      });
+    }
+  }
+
+
+  // ------------------------------------------------------------
+  // БОНУСЫ (аптечка / энергия)
+  // ------------------------------------------------------------
+  function spawnPowerup(pos, type) {
+    const color = type === 'health' ? 0x00ff88 : 0xffaa00;
+    const geo = type === 'health'
+      ? new THREE.BoxGeometry(0.55, 0.55, 0.55)
+      : new THREE.OctahedronGeometry(0.45);
+
+    const p = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: color }));
+    p.position.copy(pos);
+    p.position.y = 1.5;
+    scene.add(p);
+
+    const glow = new THREE.PointLight(color, 3, 8);
+    p.add(glow);
+
+    powerups.push({
+      mesh: p, type: type,
+      hover: Math.random() * 6, life: 25
+    });
+  }
+
+
+  // ============================================================
+  // МИНЫ
+  // ============================================================
+  function placeMine() {
+    if (mineCooldown > 0) return;
+    mineCooldown = 3;
+
+    const m = new THREE.Mesh(
+      new THREE.SphereGeometry(0.35, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xff0000 })
+    );
+    m.position.copy(player.position);
+    m.position.y = 0.4;
+    scene.add(m);
+
+    const light = new THREE.PointLight(0xff0000, 3, 6);
+    m.add(light);
+
+    mines.push({ mesh: m, life: 18, blink: 0 });
+    sfx.mine();
+  }
+
+
+  function updateMines(dt) {
+    for (let i = mines.length - 1; i >= 0; i--) {
+      const m = mines[i];
+      m.life -= dt;
+      m.blink += dt;
+
+      m.mesh.material.color.setHex(
+        Math.sin(m.blink * 12) > 0 ? 0xff0000 : 0x440000
+      );
+      m.mesh.scale.setScalar(1 + Math.sin(m.blink * 12) * 0.15);
+
+      let exploded = false;
+      for (const e of enemies) {
+        const d = e.mesh.position.distanceTo(m.mesh.position);
+        if (d < 3.5) {
+          for (let j = 0; j < 20; j++) {
+            spawnHitParticles(m.mesh.position, 0xff8800);
+          }
+          for (const e2 of enemies) {
+            if (e2.mesh.position.distanceTo(m.mesh.position) < 4.5) {
+              damageEnemy(e2, e2.isBoss ? 60 : 120);
+            }
+          }
+          sfx.explode();
+          flashScreen(0xff4400, 0.25);
+          scene.remove(m.mesh);
+          mines.splice(i, 1);
+          exploded = true;
+          break;
+        }
+      }
+
+      if (!exploded && m.life <= 0) {
+        scene.remove(m.mesh);
+        mines.splice(i, 1);
+      }
+    }
+  }
+
+
+  // ============================================================
+  // СОСТОЯНИЕ ИГРЫ И HUD
+  // ============================================================
+  let hp = 100;
+  let energy = 0;
+  let charging = false;
+  let chargeTime = 0;
+  let score = 0, kills = 0;
+  let wave = 1;
+  let waveTimer = 0;
+  let waveState = 'preparing';
+  let gameOver = false;
+  let velocityY = 0;
+  let onGround = true;
+  let jumpCount = 0;
+  let shootCooldown = 0;
+
+  const hpFill = document.getElementById('hpFill');
+  const enFill = document.getElementById('enFill');
+  const scoreEl = document.getElementById('score');
+  const killsEl = document.getElementById('kills');
+  const waveEl = document.getElementById('wave');
+  const waveInfoEl = document.getElementById('waveInfo');
+  const gameoverEl = document.getElementById('gameover');
+  const damageOverlay = document.getElementById('damageOverlay');
+
+  const killFeed = document.createElement('div');
+  killFeed.className = 'killfeed';
+  document.body.appendChild(killFeed);
+
+
+  function updateHUD() {
+    hpFill.style.width = Math.max(0, hp) + '%';
+    enFill.style.width = energy + '%';
+    scoreEl.textContent = 'SCORE: ' + score;
+    killsEl.textContent = 'KILLS: ' + kills;
+    waveEl.textContent = 'WAVE: ' + wave;
+
+    if (waveState === 'preparing') {
+      waveInfoEl.innerHTML =
+        'ВОЛНА ' + wave + ' ЧЕРЕЗ<br>' +
+        '<span style="font-size:36px;color:#0ff;">' +
+        Math.ceil(waveTimer) + '</span>';
+    } else if (waveState === 'cleared') {
+      waveInfoEl.innerHTML =
+        '<span style="color:#0ff;">ВОЛНА ЗАЧИЩЕНА!</span>';
+    } else {
+      waveInfoEl.textContent = 'ВРАГОВ: ' + enemies.length;
+    }
+  }
+
+
+  function addKillFeed(name) {
+    const div = document.createElement('div');
+    div.textContent = '✖ ' + name;
+    killFeed.appendChild(div);
+    setTimeout(function() { div.remove(); }, 3000);
+  }
+
+
+  function showHitmark() {
+    const hm = document.createElement('div');
+    hm.className = 'hitmark';
+    hm.textContent = '✕';
+    hm.style.left = 'calc(50% + 18px)';
+    hm.style.top = 'calc(50% - 18px)';
+    document.body.appendChild(hm);
+    setTimeout(function() { hm.remove(); }, 400);
+  }
+
+
+  function showDamage() {
+    damageOverlay.style.opacity = '1';
+    setTimeout(function() {
+      damageOverlay.style.opacity = '0';
+    }, 180);
+  }
+
+
+  function flashScreen(color, alpha) {
+    const div = document.createElement('div');
+    const r = (color >> 16) & 255;
+    const g = (color >> 8) & 255;
+    const b = color & 255;
+
+    div.style.cssText =
+      'position:fixed;inset:0;' +
+      'background:rgba(' + r + ',' + g + ',' + b + ',' + alpha + ');' +
+      'pointer-events:none;z-index:50;transition:opacity 0.4s;';
+
+    document.body.appendChild(div);
+    setTimeout(function() { div.style.opacity = '0'; }, 30);
+    setTimeout(function() { div.remove(); }, 500);
+  }
+
+
+  function endGame() {
+    gameOver = true;
+    document.getElementById('finalScore').textContent =
+      'SCORE: ' + score + ' | KILLS: ' + kills + ' | WAVE: ' + wave;
+    gameoverEl.style.display = 'flex';
+    if (document.exitPointerLock) document.exitPointerLock();
+  }
+
+
+  // ============================================================
+  // МЫШЬ — СТРЕЛЬБА
+  // ============================================================
+  let mouseDownL = false;
+  let mouseDownR = false;
+
+  renderer.domElement.addEventListener('mousedown', function(e) {
+    if (e.button === 0) mouseDownL = true;
+    if (e.button === 2) mouseDownR = true;
+  });
+
+  renderer.domElement.addEventListener('mouseup', function(e) {
+    if (e.button === 0) mouseDownL = false;
+    if (e.button === 2) {
+      if (charging && chargeTime > 1.2) releaseMegaLaser();
+      mouseDownR = false;
+      charging = false;
+    }
+  });
+
+  renderer.domElement.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  });
+
+
+  // ------------------------------------------------------------
+  // НАПРАВЛЕНИЕ ПРИЦЕЛА (из камеры)
+  // ------------------------------------------------------------
+  function getAimDirection() {
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    return dir.normalize();
+  }
+
+
+  // ------------------------------------------------------------
+  // ВЫПУСК МЕГА-ЛАЗЕРА
+  // ------------------------------------------------------------
+  function releaseMegaLaser() {
+    const origin = player.position.clone();
+    origin.y += 1.8;
+    const dir = getAimDirection();
+    origin.add(dir.clone().multiplyScalar(1.2));
+
+    firePlasma(origin, dir, true);
+
+    player.position.add(dir.clone().multiplyScalar(-2));
+
+    flashScreen(0xffdd44, 0.5);
+    energy = 0;
+    chargeTime = 0;
+    updateHUD();
+  }
+
+
+  // ------------------------------------------------------------
+  // СПАВН СЛУЧАЙНОГО ВРАГА
+  // ------------------------------------------------------------
+  function spawnRandomEnemy() {
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 30 + Math.random() * 35;
+    const x = player.position.x + Math.cos(angle) * radius;
+    const z = player.position.z + Math.sin(angle) * radius;
+    spawnEnemy(
+      Math.floor(Math.random() * robotStyles.length),
+      new THREE.Vector3(x, 0, z)
+    );
+  }
+
+  // НЕ ЗАКРЫВАЙ mainGame() — продолжение в Части 5
+ 1.  <!DOCTYPE html>, <head>, <style>     ← Часть 1
+2.  <body>, меню, HUD, экраны             ← Часть 1
+3.  <script src="three.min.js">            ← Часть 1
+4.  <script>
+    ├─ Обработка ошибок                     ← Часть 1
+    ├─ Аудио (Web Audio API)                ← Часть 1
+    ├─ initMenu(), startGame()              ← Часть 1
+    │
+    ├─ function mainGame() {
+    │   ├─ Сцена, свет, город 40×40         ← Часть 2
+    │   ├─ Персонаж R15, камера             ← Часть 3
+    │   ├─ Роботы, лазеры, мины, HUD        ← Часть 4
+    │   ├─ Игровой цикл, волны              ← Часть 5
+    │   └─ resize                           ← Часть 5
+    │  }                                    ← Часть 5
+    </script>                               ← Часть 5
+</body>                                     ← Часть 5
+</html>                                     ← Часть 5

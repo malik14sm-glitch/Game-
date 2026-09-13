@@ -2873,21 +2873,18 @@ function mainGame() {
   }
 
   // НЕ ЗАКРЫВАЙ mainGame() — продолжение в Части 5
- 1.  <!DOCTYPE html>, <head>, <style>     ← Часть 1
-2.  <body>, меню, HUD, экраны             ← Часть 1
-3.  <script src="three.min.js">            ← Часть 1
-4.  <script>
-    ├─ Обработка ошибок                     ← Часть 1
-    ├─ Аудио (Web Audio API)                ← Часть 1
-    ├─ initMenu(), startGame()              ← Часть 1
-    │
-    ├─ function mainGame() {
-    │   ├─ Сцена, свет, город 40×40         ← Часть 2
-    │   ├─ Персонаж R15, камера             ← Часть 3
-    │   ├─ Роботы, лазеры, мины, HUD        ← Часть 4
-    │   ├─ Игровой цикл, волны              ← Часть 5
-    │   └─ resize                           ← Часть 5
-    │  }                                    ← Часть 5
-    </script>                               ← Часть 5
-</body>                                     ← Часть 5
-</html>                                     ← Часть 5
+  // ============================================================
+  // РЕСАЙЗ ОКНА
+  // ============================================================
+  addEventListener('resize', function() {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+} 
+
+</script>
+</body>
+</html>                         
+</html>                                     

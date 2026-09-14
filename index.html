@@ -2,13 +2,13 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>NEON HUNTER v6.3 // Cyberpunk Shooter</title>
+<title>NEON HUNTER v6.4 // Cyberpunk Shooter</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
     width: 100%; height: 100%; overflow: hidden;
     background: #000; font-family: 'Courier New', monospace;
-    color: #0ff; cursor: none;
+    color: #0ff; cursor: crosshair;
     user-select: none; -webkit-user-select: none;
   }
   canvas { display: block; position: fixed; top: 0; left: 0; }
@@ -32,13 +32,12 @@
   #score, #kills, #wave { font-size: 16px; font-weight: bold; color: #0ff; }
   #wave { color: #f0f; text-shadow: 0 0 12px #f0f; }
 
-  /* ПРИЦЕЛ — ВСЕГДА В ЦЕНТРЕ */
+  /* ПРИЦЕЛ — СЛЕДУЕТ ЗА МЫШЬЮ */
   #crosshair {
     position: fixed;
-    left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
     width: 32px; height: 32px;
     pointer-events: none; z-index: 12;
+    will-change: left, top;
   }
   #crosshair::before, #crosshair::after {
     content: ''; position: absolute;
@@ -180,19 +179,6 @@
     from { transform: translateX(40px); opacity: 0; }
     to   { transform: translateX(0); opacity: 1; }
   }
-
-  #lockHint {
-    position: fixed; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    color: #0ff; font-size: 20px; letter-spacing: 3px;
-    text-align: center;
-    background: rgba(0,0,0,0.88);
-    padding: 20px 40px;
-    border: 2px solid #0ff; border-radius: 8px;
-    z-index: 400; display: none;
-    cursor: pointer;
-    text-shadow: 0 0 12px #0ff;
-  }
 </style>
 </head>
 <body>
@@ -203,12 +189,10 @@
 
 <div id="menu">
   <h1>NEON HUNTER</h1>
-  <h2>CYBERPUNK SHOOTER v6.3 · R15</h2>
+  <h2>CYBERPUNK SHOOTER v6.4 · R15</h2>
   <button class="btn" id="btnPlay">▶  ИГРАТЬ</button>
   <button class="btn" id="btnHelp">?  УПРАВЛЕНИЕ</button>
 </div>
-
-<div id="lockHint">🖱 КЛИКНИ СЮДА<br><small style="font-size:14px;">чтобы захватить мышь</small></div>
 
 <div id="hud" style="display:none;">
   <div>HP: <div class="bar"><div id="hpFill"></div></div></div>
@@ -220,7 +204,7 @@
 <div id="waveInfo" style="display:none;"></div>
 <div id="crosshair" style="display:none;"><div class="dot"></div></div>
 <div id="info" style="display:none;">
-  WASD — движение | SHIFT — бег | SPACE — прыжок (x2) | ЛКМ — плазма | ПКМ (держать) — МЕГА-ЛУЧ | E — мина | ESC — освободить мышь
+  WASD — движение | SHIFT — бег | SPACE — прыжок | ЛКМ — плазма | ПКМ (держать) — поворот камеры | R (держать 1.2с) — МЕГА-ЛУЧ | E — мина
 </div>
 <div id="gameover">
   СИСТЕМА УНИЧТОЖЕНА
@@ -232,8 +216,9 @@
 <script>
 
 // ============================================================
-// NEON HUNTER v6.3 — ПОЛНЫЙ КОД
-// Прицел в центре. Мышь захватывается (Pointer Lock).
+// NEON HUNTER v6.4
+// Прицел за мышью. ПКМ (держать) — поворот камеры.
+// R (держать 1.2с) — мега-луч (толстый). Луч убивает всех.
 // ============================================================
 
 window.addEventListener('error', function(e) {
@@ -330,17 +315,17 @@ function initMenu() {
   });
 
   document.getElementById('btnHelp').addEventListener('click', function() {
-    alert('УПРАВЛЕНИЕ v6.3:\n\n' +
-      '🖱 МЫШЬ — поворот камеры (как в шутере)\n' +
-      '🎯 ПРИЦЕЛ — всегда в центре экрана\n' +
+    alert('УПРАВЛЕНИЕ v6.4:\n\n' +
+      '🖱 МЫШЬ — прицел следует за курсором\n' +
+      '🖱 ПКМ (держать) — поворот камеры (курсор скрывается)\n' +
+      '🖱 ПКМ (отпустить) — курсор снова виден\n' +
       '🖱 КОЛЕСО — зум\n' +
-      'ЛКМ — плазменный заряд\n' +
-      'ПКМ (держать 1.2с) — МЕГА-ЛУЧ\n' +
+      'ЛКМ — плазменный заряд (в точку прицела)\n' +
+      'R (держать 1.2с) — МЕГА-ЛУЧ\n' +
       'WASD — движение\n' +
       'SHIFT — бег\n' +
       'SPACE — двойной прыжок\n' +
-      'E — мина\n' +
-      'ESC — освободить мышь\n\n' +
+      'E — мина\n\n' +
       'МЕГА-ЛУЧ жжёт ВСЕХ врагов на своём пути!');
   });
 }
@@ -425,7 +410,7 @@ function mainGame() {
   grid.material.transparent = true;
   scene.add(grid);
 
-  // ============ 16 СТОЛБОВ ============
+  // ============ СТОЛБЫ ============
   for (let i = 0; i < 16; i++) {
     const angle = (i / 16) * Math.PI * 2;
     const r = 60;
@@ -720,43 +705,33 @@ function mainGame() {
   scene.add(player);
 
   // ============================================================
-  // КАМЕРА И МЫШЬ — POINTER LOCK
+  // КАМЕРА И МЫШЬ — ГИБРИДНЫЙ РЕЖИМ (как Shift в Roblox)
   // ============================================================
   let yaw = 0;
   let pitch = 0.3;
   const PITCH_MIN = -0.2;
   const PITCH_MAX = 1.1;
   let cameraDistance = 8;
-  let isLocked = false;
 
-  const lockHint = document.getElementById('lockHint');
+  // Позиция мыши на экране (для прицела)
+  let mouseScreenX = innerWidth / 2;
+  let mouseScreenY = innerHeight / 2;
 
-  // Захват мыши при клике
-  renderer.domElement.addEventListener('click', function() {
-    if (!isLocked) {
-      renderer.domElement.requestPointerLock();
-    }
-  });
+  // Зажата ли ПКМ — режим поворота камеры
+  let cameraLocked = false;
 
-  lockHint.addEventListener('click', function() {
-    renderer.domElement.requestPointerLock();
-  });
-
-  document.addEventListener('pointerlockchange', function() {
-    isLocked = document.pointerLockElement === renderer.domElement;
-    lockHint.style.display = isLocked ? 'none' : 'block';
-  });
-
-  // Показать подсказку при старте
-  lockHint.style.display = 'block';
-
-  // Движение мыши крутит камеру
+  // Движение мыши
   document.addEventListener('mousemove', function(e) {
-    if (!isLocked) return;
-    const sens = 0.0022;
-    yaw -= e.movementX * sens;
-    pitch += e.movementY * sens;
-    pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch));
+    mouseScreenX = e.clientX;
+    mouseScreenY = e.clientY;
+
+    // Если зажата ПКМ — двигаем камеру
+    if (cameraLocked) {
+      const sens = 0.005;
+      yaw -= e.movementX * sens;
+      pitch += e.movementY * sens;
+      pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch));
+    }
   });
 
   addEventListener('wheel', function(e) {
@@ -1017,9 +992,9 @@ function mainGame() {
     }
   }
 
-  // ============ МЕГА-ЛУЧ ============
+  // ============ МЕГА-ЛУЧ (толстый) ============
   const MEGA_LENGTH = 80;
-  const MEGA_THICK = 0.4;
+  const MEGA_THICK = 0.9;      // ← было 0.4 — теперь в 2.25 раза толще
   const MEGA_DURATION = 3.0;
   const MEGA_DPS = 800;
 
@@ -1030,21 +1005,21 @@ function mainGame() {
   function createMegaBeam() {
     const group = new THREE.Group();
 
-    const coreGeo = new THREE.CylinderGeometry(MEGA_THICK * 0.5, MEGA_THICK * 0.5, MEGA_LENGTH, 10);
+    const coreGeo = new THREE.CylinderGeometry(MEGA_THICK * 0.5, MEGA_THICK * 0.5, MEGA_LENGTH, 12);
     coreGeo.rotateX(Math.PI / 2);
     coreGeo.translate(0, 0, MEGA_LENGTH / 2);
     const core = new THREE.Mesh(coreGeo,
       new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 }));
     group.add(core);
 
-    const midGeo = new THREE.CylinderGeometry(MEGA_THICK * 1.1, MEGA_THICK * 1.1, MEGA_LENGTH, 10);
+    const midGeo = new THREE.CylinderGeometry(MEGA_THICK * 1.1, MEGA_THICK * 1.1, MEGA_LENGTH, 12);
     midGeo.rotateX(Math.PI / 2);
     midGeo.translate(0, 0, MEGA_LENGTH / 2);
     const mid = new THREE.Mesh(midGeo,
       new THREE.MeshBasicMaterial({ color: 0xffdd44, transparent: true, opacity: 0.55 }));
     group.add(mid);
 
-    const outerGeo = new THREE.CylinderGeometry(MEGA_THICK * 2.2, MEGA_THICK * 2.2, MEGA_LENGTH, 12);
+    const outerGeo = new THREE.CylinderGeometry(MEGA_THICK * 2.2, MEGA_THICK * 2.2, MEGA_LENGTH, 14);
     outerGeo.rotateX(Math.PI / 2);
     outerGeo.translate(0, 0, MEGA_LENGTH / 2);
     const outer = new THREE.Mesh(outerGeo,
@@ -1052,7 +1027,7 @@ function mainGame() {
     group.add(outer);
 
     const tip = new THREE.Mesh(
-      new THREE.SphereGeometry(MEGA_THICK * 2, 12, 12),
+      new THREE.SphereGeometry(MEGA_THICK * 2, 14, 14),
       new THREE.MeshBasicMaterial({ color: 0xffffaa, transparent: true, opacity: 0.9 })
     );
     tip.position.z = MEGA_LENGTH;
@@ -1121,6 +1096,7 @@ function mainGame() {
 
     megaBeam.light.intensity = 5 * fade;
 
+    // Урон ВСЕМ врагам, кого пересекает луч
     if (megaBeamActive) {
       const startPoint = megaBeam.group.position.clone();
       for (let ei = enemies.length - 1; ei >= 0; ei--) {
@@ -1269,6 +1245,7 @@ function mainGame() {
   const waveInfoEl = document.getElementById('waveInfo');
   const gameoverEl = document.getElementById('gameover');
   const damageOverlay = document.getElementById('damageOverlay');
+  const crosshairEl = document.getElementById('crosshair');
 
   const killFeed = document.createElement('div');
   killFeed.className = 'killfeed';
@@ -1317,32 +1294,62 @@ function mainGame() {
     document.getElementById('finalScore').textContent =
       'SCORE: ' + score + ' | KILLS: ' + kills + ' | WAVE: ' + wave;
     gameoverEl.style.display = 'flex';
-    if (document.exitPointerLock) document.exitPointerLock();
+    cameraLocked = false;
+    document.body.style.cursor = 'crosshair';
   }
 
   // ============ МЫШЬ ============
   let mouseDownL = false;
-  let mouseDownR = false;
 
   renderer.domElement.addEventListener('mousedown', function(e) {
     if (e.button === 0) mouseDownL = true;
-    if (e.button === 2) mouseDownR = true;
+    // ПКМ — включить режим камеры (курсор скрывается)
+    if (e.button === 2) {
+      cameraLocked = true;
+      document.body.style.cursor = 'none';
+    }
   });
 
   renderer.domElement.addEventListener('mouseup', function(e) {
     if (e.button === 0) mouseDownL = false;
-    if (e.button === 2) mouseDownR = false;
+    // ПКМ отпущена — выключить режим камеры (курсор возвращается)
+    if (e.button === 2) {
+      cameraLocked = false;
+      document.body.style.cursor = 'crosshair';
+    }
   });
 
   renderer.domElement.addEventListener('contextmenu', function(e) {
     e.preventDefault();
   });
 
-  // ============ НАПРАВЛЕНИЕ СТРЕЛЬБЫ — ИЗ ЦЕНТРА ЭКРАНА ============
+  // ============ КЛАВИША R — МЕГА-ЛУЧ ============
+  let rKeyHeld = false;
+
+  addEventListener('keydown', function(e) {
+    if (e.code === 'KeyR') rKeyHeld = true;
+  });
+  addEventListener('keyup', function(e) {
+    if (e.code === 'KeyR') rKeyHeld = false;
+  });
+
+  // ============ НАПРАВЛЕНИЕ СТРЕЛЬБЫ — ОТ ИГРОКА К ПРИЦЕЛУ ============
   function getAimDirection() {
-    const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir);
-    return dir.normalize();
+    // Нормализованные координаты прицела на экране
+    const nx = (mouseScreenX / innerWidth) * 2 - 1;
+    const ny = -(mouseScreenY / innerHeight) * 2 + 1;
+
+    // Луч из камеры через точку прицела
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera({ x: nx, y: ny }, camera);
+
+    // Точка на 100 единиц от камеры по лучу
+    const targetPoint = raycaster.ray.at(100, new THREE.Vector3());
+
+    // Направление от игрока к этой точке
+    const origin = player.position.clone();
+    origin.y += 1.5;
+    return targetPoint.sub(origin).normalize();
   }
 
   function spawnRandomEnemy() {
@@ -1451,9 +1458,15 @@ function mainGame() {
     camera.position.copy(camPosLerp);
     camera.lookAt(camLookLerp);
 
+    // Прицел следует за мышью
+    if (crosshairEl) {
+      crosshairEl.style.left = (mouseScreenX - 16) + 'px';
+      crosshairEl.style.top = (mouseScreenY - 16) + 'px';
+    }
+
     // ЛКМ — плазма
     shootCooldown -= dt;
-    if (mouseDownL && shootCooldown <= 0 && isLocked) {
+    if (mouseDownL && shootCooldown <= 0) {
       const origin = player.position.clone();
       origin.y += 1.6;
       const dir = getAimDirection();
@@ -1462,8 +1475,8 @@ function mainGame() {
       shootCooldown = 0.35;
     }
 
-    // ПКМ — заряд / мега-луч
-    if (mouseDownR && isLocked) {
+    // R — заряд / мега-луч
+    if (rKeyHeld) {
       if (!charging && !megaBeamActive) {
         charging = true;
         chargeTime = 0;

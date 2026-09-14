@@ -2,642 +2,234 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NEON HUNTER v5.0 // Cyberpunk R15 Shooter</title>
+<title>NEON HUNTER v6.0 // Cyberpunk Shooter</title>
 <style>
-  /* ============================================================
-     СБРОС И ОСНОВА
-     ============================================================ */
-  *, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-    font-family: 'Courier New', 'Consolas', monospace;
-    color: #0ff;
-    cursor: none;
-    user-select: none;
-    -webkit-user-select: none;
+    width: 100%; height: 100%; overflow: hidden;
+    background: #000; font-family: 'Courier New', monospace;
+    color: #0ff; cursor: crosshair;
+    user-select: none; -webkit-user-select: none;
   }
+  canvas { display: block; position: fixed; top: 0; left: 0; }
 
-  canvas {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-  }
-
-  /* ============================================================
-     HUD — ВЕРХНИЙ ЛЕВЫЙ УГОЛ (HP, ENERGY, SCORE)
-     ============================================================ */
+  /* HUD */
   #hud {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    font-size: 15px;
-    letter-spacing: 1px;
-    pointer-events: none;
-    z-index: 10;
+    position: fixed; top: 16px; left: 16px;
+    font-size: 15px; letter-spacing: 1px;
+    pointer-events: none; z-index: 10;
     text-shadow: 0 0 12px #0ff;
   }
-
-  #hud > div {
-    margin: 6px 0;
-  }
-
+  #hud > div { margin: 6px 0; }
   .bar {
-    width: 260px;
-    height: 18px;
-    border: 1px solid #0ff;
-    background: rgba(0, 0, 0, 0.75);
-    position: relative;
-    overflow: hidden;
-    box-shadow: 0 0 12px rgba(0, 255, 255, 0.4), inset 0 0 8px rgba(0, 255, 255, 0.15);
+    width: 260px; height: 18px;
+    border: 1px solid #0ff; background: rgba(0,0,0,0.75);
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 12px rgba(0,255,255,0.4);
   }
+  .bar > div { height: 100%; transition: width 0.12s linear; }
+  #hpFill { width: 100%; background: linear-gradient(90deg, #f0f, #0ff); box-shadow: 0 0 12px #0ff; }
+  #enFill { width: 0%; background: linear-gradient(90deg, #ff0, #f80); box-shadow: 0 0 12px #f80; }
+  #score, #kills, #wave { font-size: 16px; font-weight: bold; color: #0ff; }
+  #wave { color: #f0f; text-shadow: 0 0 12px #f0f; }
 
-  .bar > div {
-    height: 100%;
-    transition: width 0.12s linear;
-    position: relative;
-  }
-
-  .bar > div::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-    animation: barShine 2s infinite;
-  }
-
-  @keyframes barShine {
-    0%   { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  #hpFill {
-    width: 100%;
-    background: linear-gradient(90deg, #f0f, #0ff);
-    box-shadow: 0 0 12px #0ff;
-  }
-
-  #enFill {
-    width: 0%;
-    background: linear-gradient(90deg, #ff0, #f80);
-    box-shadow: 0 0 12px #f80;
-  }
-
-  #score, #kills, #wave {
-    font-size: 16px;
-    font-weight: bold;
-    color: #0ff;
-  }
-
-  #wave {
-    color: #f0f;
-    text-shadow: 0 0 12px #f0f;
-  }
-
-  /* ============================================================
-     ПРИЦЕЛ
-     ============================================================ */
+  /* ПРИЦЕЛ — следует за мышью */
   #crosshair {
     position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 32px;
-    height: 32px;
-    pointer-events: none;
-    z-index: 12;
-    transition: transform 0.05s;
+    width: 32px; height: 32px;
+    pointer-events: none; z-index: 12;
+    will-change: transform;
   }
-
-  #crosshair::before,
-  #crosshair::after {
-    content: '';
-    position: absolute;
+  #crosshair::before, #crosshair::after {
+    content: ''; position: absolute;
     background: #0ff;
     box-shadow: 0 0 10px #0ff, 0 0 20px #0ff;
   }
-
-  #crosshair::before {
-    left: 15px;
-    top: 0;
-    width: 2px;
-    height: 32px;
-  }
-
-  #crosshair::after {
-    top: 15px;
-    left: 0;
-    height: 2px;
-    width: 32px;
-  }
-
+  #crosshair::before { left: 15px; top: 0; width: 2px; height: 32px; }
+  #crosshair::after { top: 15px; left: 0; height: 2px; width: 32px; }
   #crosshair .dot {
-    position: absolute;
-    left: 13px;
-    top: 13px;
-    width: 6px;
-    height: 6px;
-    background: #f0f;
-    border-radius: 50%;
+    position: absolute; left: 13px; top: 13px;
+    width: 6px; height: 6px; background: #f0f; border-radius: 50%;
     box-shadow: 0 0 12px #f0f, 0 0 24px #f0f;
     animation: dotPulse 1.5s infinite;
   }
-
   @keyframes dotPulse {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50%      { transform: scale(1.3); opacity: 0.7; }
+    0%,100% { transform: scale(1); opacity: 1; }
+    50%     { transform: scale(1.3); opacity: 0.7; }
   }
 
-  /* ============================================================
-     НИЖНЯЯ ПОДСКАЗКА
-     ============================================================ */
+  /* Подсказка */
   #info {
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
+    position: fixed; bottom: 16px; left: 50%;
     transform: translateX(-50%);
-    font-size: 12px;
-    letter-spacing: 1px;
-    color: #0ff;
+    font-size: 12px; letter-spacing: 1px; color: #0ff;
     text-shadow: 0 0 8px #0ff;
-    background: rgba(0, 0, 0, 0.7);
-    padding: 8px 20px;
-    border: 1px solid #0ff;
-    border-radius: 4px;
-    z-index: 10;
-    text-align: center;
-    white-space: nowrap;
+    background: rgba(0,0,0,0.7);
+    padding: 8px 20px; border: 1px solid #0ff;
+    border-radius: 4px; z-index: 10;
+    text-align: center; white-space: nowrap;
   }
 
-  /* ============================================================
-     ИНФО О ВОЛНЕ — ВЕРХНИЙ ПРАВЫЙ УГОЛ
-     ============================================================ */
+  /* Инфо о волне */
   #waveInfo {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    color: #f0f;
-    font-size: 16px;
-    letter-spacing: 1px;
-    text-shadow: 0 0 12px #f0f;
-    text-align: right;
-    background: rgba(0, 0, 0, 0.55);
-    padding: 12px 18px;
-    border: 1px solid #f0f;
-    border-radius: 4px;
-    min-width: 200px;
-    z-index: 10;
-    box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+    position: fixed; top: 16px; right: 16px;
+    color: #f0f; font-size: 16px; letter-spacing: 1px;
+    text-shadow: 0 0 12px #f0f; text-align: right;
+    background: rgba(0,0,0,0.55);
+    padding: 12px 18px; border: 1px solid #f0f;
+    border-radius: 4px; min-width: 200px; z-index: 10;
+    box-shadow: 0 0 20px rgba(255,0,255,0.3);
   }
 
-  /* ============================================================
-     ГЛАВНОЕ МЕНЮ
-     ============================================================ */
+  /* Меню */
   #menu {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
     flex-direction: column;
-    background: radial-gradient(ellipse at center, #1a0033 0%, #0a0018 50%, #000 100%);
+    background: radial-gradient(ellipse at center, #1a0033, #0a0018, #000);
     z-index: 500;
   }
-
-  #menu::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background:
-      repeating-linear-gradient(0deg,
-        transparent 0px,
-        transparent 2px,
-        rgba(0, 255, 255, 0.03) 2px,
-        rgba(0, 255, 255, 0.03) 4px
-      );
-    pointer-events: none;
-    animation: scanline 8s linear infinite;
-  }
-
-  @keyframes scanline {
-    from { transform: translateY(0); }
-    to   { transform: translateY(4px); }
-  }
-
   #menu h1 {
-    color: #f0f;
-    font-size: 82px;
-    font-weight: 900;
-    letter-spacing: 12px;
-    margin-bottom: 8px;
-    text-shadow:
-      0 0 20px #f0f,
-      0 0 40px #f0f,
-      0 0 80px #f0f,
-      0 0 120px #0ff;
+    color: #f0f; font-size: 82px; font-weight: 900;
+    letter-spacing: 12px; margin-bottom: 8px;
+    text-shadow: 0 0 20px #f0f, 0 0 40px #f0f, 0 0 80px #f0f;
     animation: titlePulse 2s infinite;
-    z-index: 2;
   }
-
   @keyframes titlePulse {
-    0%, 100% {
-      text-shadow:
-        0 0 20px #f0f,
-        0 0 40px #f0f,
-        0 0 80px #f0f;
-    }
-    50% {
-      text-shadow:
-        0 0 40px #f0f,
-        0 0 80px #f0f,
-        0 0 140px #f0f,
-        0 0 200px #0ff;
-    }
+    0%,100% { text-shadow: 0 0 20px #f0f, 0 0 40px #f0f, 0 0 80px #f0f; }
+    50%     { text-shadow: 0 0 40px #f0f, 0 0 80px #f0f, 0 0 140px #f0f, 0 0 200px #0ff; }
   }
-
   #menu h2 {
-    color: #0ff;
-    font-size: 16px;
-    letter-spacing: 8px;
-    margin-bottom: 60px;
-    text-shadow: 0 0 12px #0ff;
-    z-index: 2;
+    color: #0ff; font-size: 16px; letter-spacing: 8px;
+    margin-bottom: 60px; text-shadow: 0 0 12px #0ff;
   }
-
-  #menu .version {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    color: #0ff;
-    opacity: 0.5;
-    font-size: 12px;
-    letter-spacing: 2px;
-  }
-
   .btn {
-    padding: 18px 60px;
-    margin: 8px;
-    font-size: 18px;
-    font-weight: bold;
-    letter-spacing: 5px;
-    background: transparent;
-    color: #0ff;
-    border: 2px solid #0ff;
-    cursor: pointer;
-    font-family: inherit;
-    text-shadow: 0 0 10px #0ff;
-    box-shadow:
-      0 0 20px rgba(0, 255, 255, 0.3),
-      inset 0 0 20px rgba(0, 255, 255, 0.1);
-    transition: all 0.25s;
-    border-radius: 4px;
-    min-width: 320px;
-    position: relative;
-    overflow: hidden;
-    z-index: 2;
+    padding: 18px 60px; margin: 8px; font-size: 18px;
+    font-weight: bold; letter-spacing: 5px;
+    background: transparent; color: #0ff;
+    border: 2px solid #0ff; cursor: pointer;
+    font-family: inherit; text-shadow: 0 0 10px #0ff;
+    box-shadow: 0 0 20px rgba(0,255,255,0.3), inset 0 0 20px rgba(0,255,255,0.1);
+    transition: all 0.25s; border-radius: 4px; min-width: 320px;
   }
-
-  .btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.4), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.5s;
-  }
-
-  .btn:hover::before {
-    transform: translateX(100%);
-  }
-
   .btn:hover {
-    background: #0ff;
-    color: #000;
-    text-shadow: none;
-    box-shadow:
-      0 0 40px #0ff,
-      0 0 80px #0ff;
+    background: #0ff; color: #000; text-shadow: none;
+    box-shadow: 0 0 40px #0ff, 0 0 80px #0ff;
     transform: scale(1.05);
   }
 
-  /* ============================================================
-     ЭКРАН ЗАГРУЗКИ
-     ============================================================ */
+  /* Загрузка */
   #loading {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    background: #000;
-    color: #0ff;
-    font-size: 22px;
-    letter-spacing: 4px;
-    z-index: 600;
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; background: #000; color: #0ff;
+    font-size: 22px; letter-spacing: 4px; z-index: 600;
   }
+  #loading .dot { animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
 
-  #loading .dot {
-    animation: blink 1s infinite;
-  }
-
-  @keyframes blink {
-    50% { opacity: 0.2; }
-  }
-
-  #loading .progress {
-    width: 300px;
-    height: 4px;
-    background: #1a1a2e;
-    margin-top: 20px;
-    border: 1px solid #0ff;
-    overflow: hidden;
-  }
-
-  #loading .progress > div {
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg, #0ff, #f0f);
-    box-shadow: 0 0 12px #0ff;
-    transition: width 0.3s;
-  }
-
-  /* ============================================================
-     ЭКРАН ОШИБКИ
-     ============================================================ */
+  /* Ошибка */
   #err {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    background: rgba(30, 0, 0, 0.97);
-    color: #f66;
-    font-size: 14px;
-    z-index: 700;
-    padding: 40px;
-    white-space: pre-wrap;
-    overflow: auto;
-    font-family: monospace;
-    text-align: left;
-    line-height: 1.6;
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    background: rgba(30,0,0,0.97); color: #f66;
+    font-size: 14px; z-index: 700; padding: 40px;
+    white-space: pre-wrap; overflow: auto;
+    font-family: monospace; text-align: left; line-height: 1.6;
   }
 
-  /* ============================================================
-     ЭКРАН СМЕРТИ
-     ============================================================ */
+  /* Смерть */
   #gameover {
-    position: fixed;
-    inset: 0;
-    display: none;
-    align-items: center;
-    justify-content: center;
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.94);
-    color: #f0f;
-    font-size: 62px;
-    font-weight: 900;
-    letter-spacing: 6px;
-    text-shadow:
-      0 0 30px #f0f,
-      0 0 60px #f0f;
+    background: rgba(0,0,0,0.94); color: #f0f;
+    font-size: 62px; font-weight: 900; letter-spacing: 6px;
+    text-shadow: 0 0 30px #f0f, 0 0 60px #f0f;
     z-index: 100;
-    animation: gameoverPulse 1.5s infinite;
   }
-
-  @keyframes gameoverPulse {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0.85; }
-  }
-
   #gameover small {
-    font-size: 16px;
-    color: #0ff;
-    margin-top: 24px;
-    letter-spacing: 4px;
-    text-shadow: 0 0 12px #0ff;
+    font-size: 16px; color: #0ff; margin-top: 24px;
+    letter-spacing: 4px; text-shadow: 0 0 12px #0ff;
   }
 
-  /* ============================================================
-     HITMARKER (крестик при попадании)
-     ============================================================ */
+  /* Hitmark */
   .hitmark {
-    position: fixed;
-    pointer-events: none;
-    color: #f00;
-    font-size: 30px;
-    font-weight: bold;
-    z-index: 20;
-    text-shadow:
-      0 0 12px #f00,
-      0 0 24px #f00;
+    position: fixed; pointer-events: none;
+    color: #f00; font-size: 30px; font-weight: bold;
+    z-index: 20; text-shadow: 0 0 12px #f00, 0 0 24px #f00;
     animation: hitFade 0.45s forwards;
   }
-
   @keyframes hitFade {
     0%   { opacity: 1; transform: scale(0.7); }
     100% { opacity: 0; transform: scale(1.8); }
   }
 
-  /* ============================================================
-     DAMAGE OVERLAY (красные края экрана)
-     ============================================================ */
+  /* Damage overlay */
   #damageOverlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 15;
-    background: radial-gradient(
-      ellipse at center,
-      transparent 35%,
-      rgba(255, 0, 0, 0.7) 100%
-    );
-    opacity: 0;
-    transition: opacity 0.18s;
+    position: fixed; inset: 0; pointer-events: none; z-index: 15;
+    background: radial-gradient(ellipse at center, transparent 35%, rgba(255,0,0,0.7) 100%);
+    opacity: 0; transition: opacity 0.18s;
   }
 
-  /* ============================================================
-     KILLFEED (список убийств справа)
-     ============================================================ */
+  /* Killfeed */
   .killfeed {
-    position: fixed;
-    top: 130px;
-    right: 16px;
-    color: #0ff;
-    font-size: 13px;
-    letter-spacing: 1px;
-    text-shadow: 0 0 8px #0ff;
-    z-index: 10;
-    text-align: right;
-    pointer-events: none;
+    position: fixed; top: 130px; right: 16px;
+    color: #0ff; font-size: 13px; letter-spacing: 1px;
+    text-shadow: 0 0 8px #0ff; z-index: 10;
+    text-align: right; pointer-events: none;
   }
-
   .killfeed div {
-    margin: 4px 0;
-    padding: 3px 10px;
-    background: rgba(0, 0, 0, 0.5);
+    margin: 4px 0; padding: 3px 10px;
+    background: rgba(0,0,0,0.5);
     border-right: 2px solid #0ff;
     animation: killSlideIn 0.3s;
   }
-
   @keyframes killSlideIn {
     from { transform: translateX(40px); opacity: 0; }
     to   { transform: translateX(0); opacity: 1; }
-  }
-
-  /* ============================================================
-     ПОДСКАЗКА ЗАХВАТА МЫШИ
-     ============================================================ */
-  #lockHint {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #0ff;
-    font-size: 22px;
-    letter-spacing: 3px;
-    text-align: center;
-    background: rgba(0, 0, 0, 0.88);
-    padding: 24px 48px;
-    border: 2px solid #0ff;
-    border-radius: 8px;
-    box-shadow:
-      0 0 30px rgba(0, 255, 255, 0.4),
-      inset 0 0 30px rgba(0, 255, 255, 0.1);
-    z-index: 400;
-    display: none;
-    cursor: pointer;
-    text-shadow: 0 0 12px #0ff;
-    animation: lockPulse 1.5s infinite;
-  }
-
-  @keyframes lockPulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50%      { transform: translate(-50%, -50%) scale(1.03); }
-  }
-
-  /* ============================================================
-     АДАПТИВ (мобильные)
-     ============================================================ */
-  @media (max-width: 768px) {
-    #menu h1 { font-size: 42px; letter-spacing: 6px; }
-    #menu h2 { font-size: 12px; letter-spacing: 4px; }
-    .btn { padding: 14px 30px; font-size: 14px; min-width: 240px; }
-    #hud { font-size: 12px; }
-    .bar { width: 180px; height: 14px; }
-    #info { font-size: 10px; padding: 6px 12px; white-space: normal; max-width: 90%; }
-    #waveInfo { font-size: 13px; min-width: 140px; padding: 8px 12px; }
-    #gameover { font-size: 36px; }
   }
 </style>
 </head>
 <body>
 
-<!-- ============================================================
-     ЭКРАН ЗАГРУЗКИ
-     ============================================================ -->
-<div id="loading">
-  ЗАГРУЗКА СИСТЕМЫ<span class="dot">...</span>
-  <div class="progress"><div id="loadProgress"></div></div>
-</div>
-
-<!-- ============================================================
-     ЭКРАН ОШИБКИ
-     ============================================================ -->
+<div id="loading">ЗАГРУЗКА СИСТЕМЫ<span class="dot">...</span></div>
 <div id="err"></div>
-
-<!-- ============================================================
-     DAMAGE OVERLAY
-     ============================================================ -->
 <div id="damageOverlay"></div>
 
-<!-- ============================================================
-     ГЛАВНОЕ МЕНЮ
-     ============================================================ -->
 <div id="menu">
   <h1>NEON HUNTER</h1>
-  <h2>CYBERPUNK SHOOTER v5.0 · R15</h2>
+  <h2>CYBERPUNK SHOOTER v6.0 · R15</h2>
   <button class="btn" id="btnPlay">▶  ИГРАТЬ</button>
   <button class="btn" id="btnHelp">?  УПРАВЛЕНИЕ</button>
-  <button class="btn" id="btnCredits">©  О ИГРЕ</button>
-  <div class="version">v5.0 · R15 · BUILT WITH THREE.JS</div>
 </div>
 
-<!-- ============================================================
-     ПОДСКАЗКА ЗАХВАТА МЫШИ
-     ============================================================ -->
-<div id="lockHint">
-  🖱 КЛИКНИ СЮДА<br>
-  <small style="font-size: 14px; opacity: 0.8;">чтобы захватить мышь</small>
-</div>
-
-<!-- ============================================================
-     HUD
-     ============================================================ -->
-<div id="hud" style="display: none;">
+<div id="hud" style="display:none;">
   <div>HP: <div class="bar"><div id="hpFill"></div></div></div>
   <div>ENERGY: <div class="bar"><div id="enFill"></div></div></div>
   <div id="score">SCORE: 0</div>
   <div id="kills">KILLS: 0</div>
   <div id="wave">WAVE: 1</div>
 </div>
-
-<!-- ============================================================
-     ИНФО О ВОЛНЕ
-     ============================================================ -->
-<div id="waveInfo" style="display: none;"></div>
-
-<!-- ============================================================
-     ПРИЦЕЛ
-     ============================================================ -->
-<div id="crosshair" style="display: none;"><div class="dot"></div></div>
-
-<!-- ============================================================
-     ПОДСКАЗКА УПРАВЛЕНИЯ
-     ============================================================ -->
-<div id="info" style="display: none;">
-  WASD — движение | SHIFT — бег | SPACE — прыжок (x2) | ЛКМ — плазма | ПКМ (держать) — МЕГА-ЛАЗЕР | E — мина | ESC — пауза
+<div id="waveInfo" style="display:none;"></div>
+<div id="crosshair" style="display:none;"><div class="dot"></div></div>
+<div id="info" style="display:none;">
+  WASD — движение | SHIFT — бег | SPACE — прыжок (x2) | ЛКМ — плазма | ПКМ (держать) — МЕГА-ЛАЗЕР | E — мина
 </div>
-
-<!-- ============================================================
-     ЭКРАН СМЕРТИ
-     ============================================================ -->
 <div id="gameover">
   СИСТЕМА УНИЧТОЖЕНА
-  <div style="font-size: 22px; color: #0ff; margin-top: 24px; letter-spacing: 4px;" id="finalScore"></div>
+  <div style="font-size:22px; color:#0ff; margin-top:24px; letter-spacing:4px;" id="finalScore"></div>
   <small>F5 — ПЕРЕЗАПУСК</small>
 </div>
 
-<!-- ============================================================
-     THREE.JS
-     ============================================================ -->
 <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-
 <script>
-// ============================================================
-// ЧАСТЬ 1 — ИНИЦИАЛИЗАЦИЯ, ЗВУК, МЕНЮ, ЗАПУСК
-// ============================================================
-// Эта часть отвечает за:
-// - Обработку ошибок
-// - Web Audio API (звуки без файлов)
-// - Проверку загрузки Three.js
-// - Меню и кнопки
-// - Функцию startGame() — запуск Части 2
-// ============================================================
-
 
 // ============================================================
-// ОБРАБОТКА ОШИБОК — показываем на экране
+// NEON HUNTER v6.0 — ВЕСЬ КОД
 // ============================================================
+
+// ==== ОШИБКИ ====
 window.addEventListener('error', function(e) {
   const err = document.getElementById('err');
   if (!err) return;
@@ -647,56 +239,35 @@ window.addEventListener('error', function(e) {
                    'Строка: ' + (e.lineno || '?');
 });
 
-
-// ============================================================
-// АУДИО — Web Audio API (генерируем звуки на лету)
-// ============================================================
+// ==== АУДИО ====
 let audioCtx = null;
-
 function initAudio() {
   if (!audioCtx) {
-    try {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    } catch (e) {
-      console.warn('AudioContext недоступен');
-    }
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e){}
   }
-  // Возобновляем если браузер поставил на паузу
-  if (audioCtx && audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 }
-
 function playSound(freq, dur, type, vol) {
   if (!audioCtx) return;
   try {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-
     osc.type = type || 'square';
     osc.frequency.value = freq;
-
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-
     const v = vol !== undefined ? vol : 0.08;
     gain.gain.setValueAtTime(v, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-
     osc.start(audioCtx.currentTime);
     osc.stop(audioCtx.currentTime + dur);
-  } catch (e) {
-    // игнорируем
-  }
+  } catch(e){}
 }
-
-// Все звуковые эффекты игры
 const sfx = {
   laser:   function() { playSound(880, 0.08, 'sawtooth', 0.06); },
   mega:    function() {
     playSound(120, 0.7, 'sawtooth', 0.15);
     playSound(300, 0.6, 'square', 0.1);
-    playSound(600, 0.5, 'sine', 0.06);
   },
   explode: function() { playSound(70, 0.35, 'sawtooth', 0.14); },
   hit:     function() { playSound(1400, 0.04, 'square', 0.04); },
@@ -704,7 +275,6 @@ const sfx = {
   pickup:  function() { playSound(1600, 0.15, 'sine', 0.09); },
   jump:    function() { playSound(600, 0.1, 'sine', 0.05); },
   mine:    function() { playSound(300, 0.12, 'square', 0.05); },
-  charge:  function() { playSound(400, 0.4, 'sine', 0.05); },
   waveStart: function() {
     playSound(220, 0.4, 'sawtooth', 0.1);
     setTimeout(function(){ playSound(440, 0.4, 'sawtooth', 0.1); }, 200);
@@ -716,171 +286,67 @@ const sfx = {
   }
 };
 
-
-// ============================================================
-// ПРОГРЕСС ЗАГРУЗКИ (визуальный)
-// ============================================================
-let _loadProgress = 0;
-function setLoadProgress(p) {
-  _loadProgress = p;
-  const el = document.getElementById('loadProgress');
-  if (el) el.style.width = p + '%';
-}
-
-
-// ============================================================
-// ПРОВЕРКА THREE.JS И ЗАПУСК МЕНЮ
-// ============================================================
+// ==== ПРОВЕРКА THREE.JS ====
 window.addEventListener('load', function() {
-  setLoadProgress(30);
-
   setTimeout(function() {
-    setLoadProgress(60);
-
     if (typeof THREE === 'undefined') {
       document.getElementById('loading').style.display = 'none';
       const err = document.getElementById('err');
       err.style.display = 'flex';
       err.textContent =
         '❌ Three.js не загрузился.\n\n' +
-        'Возможные причины и решения:\n\n' +
-        '1. Ты открываешь файл через file:// в Chrome/Edge — они блокируют загрузку.\n' +
-        '   → Открой через Firefox\n' +
-        '   → Или запусти python -m http.server 8000 и открой http://localhost:8000\n' +
-        '   → Или загрузи на GitHub Pages\n\n' +
-        '2. Нет интернета — проверь соединение.\n\n' +
-        '3. Расширение браузера блокирует unpkg.com — отключи его.';
+        'Открой в Firefox ИЛИ загрузи на GitHub Pages.';
       return;
     }
-
-    setLoadProgress(100);
-
-    setTimeout(function() {
-      initMenu();
-      document.getElementById('loading').style.display = 'none';
-    }, 300);
+    initMenu();
+    document.getElementById('loading').style.display = 'none';
   }, 400);
 });
 
-
-// ============================================================
-// МЕНЮ
-// ============================================================
 function initMenu() {
-  const btnPlay = document.getElementById('btnPlay');
-  const btnHelp = document.getElementById('btnHelp');
-  const btnCredits = document.getElementById('btnCredits');
-
-  btnPlay.addEventListener('click', function() {
+  document.getElementById('btnPlay').addEventListener('click', function() {
     document.getElementById('menu').style.display = 'none';
     document.getElementById('hud').style.display = 'block';
     document.getElementById('crosshair').style.display = 'block';
     document.getElementById('info').style.display = 'block';
     document.getElementById('waveInfo').style.display = 'block';
-
     initAudio();
     startGame();
   });
 
-  btnHelp.addEventListener('click', function() {
-    alert(
-      '═══════════════════════════════════\n' +
-      '   УПРАВЛЕНИЕ NEON HUNTER v5.0\n' +
-      '═══════════════════════════════════\n\n' +
-      '🖱  МЫШЬ  — поворот камеры вокруг персонажа\n' +
-      '🖱  КОЛЕСО  — приближение / отдаление\n\n' +
-      'ЛКМ  — плазменный заряд (жёлтый шар)\n' +
-      'ПКМ (держать 1.2с)  — МЕГА-ЛАЗЕР (ваншот)\n\n' +
-      'WASD  — движение относительно камеры\n' +
-      'SHIFT  — бег\n' +
-      'SPACE  — прыжок (можно дважды в воздухе)\n' +
-      'E  — поставить мину\n' +
-      'ESC  — освободить мышь\n\n' +
-      '═══════════════════════════════════\n' +
-      '   ЦЕЛЬ ИГРЫ\n' +
-      '═══════════════════════════════════\n\n' +
-      'Роботы-убийцы ЛЕТАЮТ и атакуют НОЖАМИ.\n' +
-      'Они не стреляют — только приближаются и бьют вблизи.\n\n' +
-      'Выживай против ВОЛН. Каждые 5 волн — БОСС.\n' +
-      'Собирай бонусы:\n' +
-      '  🟢 зелёный куб  — +30 HP\n' +
-      '  🟠 оранжевый октаэдр  — +50 энергии\n\n' +
-      'МЕГА-ЛАЗЕР убивает всё на своём пути с одного попадания!'
-    );
-  });
-
-  btnCredits.addEventListener('click', function() {
-    alert(
-      '═══════════════════════════════════\n' +
-      '   NEON HUNTER v5.0\n' +
-      '═══════════════════════════════════\n\n' +
-      'Технологии:\n' +
-      '• Three.js r160 — 3D-движок\n' +
-      '• Web Audio API — генерация звука\n' +
-      '• Pointer Lock API — захват мыши\n' +
-      '• Скелет R15 — 15 частей тела\n\n' +
-      'Особенности:\n' +
-      '• Город 40×40 с японскими билбордами\n' +
-      '• 20 видов роботов с ножами\n' +
-      '• Плазменные лазеры (как у Злого Морти)\n' +
-      '• Мега-лазер с ваншотом\n' +
-      '• Двойной прыжок\n' +
-      '• Мины\n' +
-      '• Волны и боссы\n\n' +
-      'Приятной игры! 🎮'
-    );
+  document.getElementById('btnHelp').addEventListener('click', function() {
+    alert('УПРАВЛЕНИЕ v6.0:\n\n' +
+      '🖱 МЫШЬ — прицел следует за курсором\n' +
+      '🖱 КОЛЕСО — зум\n' +
+      'ЛКМ — плазменный заряд\n' +
+      'ПКМ (держать 1.2с) — МЕГА-ЛАЗЕР\n' +
+      'WASD — движение\n' +
+      'SHIFT — бег\n' +
+      'SPACE — двойной прыжок\n' +
+      'E — мина\n\n' +
+      'Стрельба летит туда, где прицел.');
   });
 }
 
-
-// ============================================================
-// ЗАПУСК ИГРЫ — вызывает mainGame() из Части 2
-// ============================================================
 let gameStarted = false;
-
 function startGame() {
   if (gameStarted) return;
   gameStarted = true;
   mainGame();
 }
 
-// НЕ ЗАКРЫВАЙ SCRIPT — продолжение в Части 2
- // ============================================================
-// ЧАСТЬ 2 — СЦЕНА, СВЕТ, ГОРОД 40×40
 // ============================================================
-// Эта часть внутри функции mainGame(), которая вызывается
-// из startGame() в Части 1.
-//
-// Содержит:
-// - Инициализация THREE-сцены, камеры, рендера
-// - Освещение (ambient + moon + городские огни)
-// - Земля с сеткой
-// - Генерация детального города 40×40
-// - Билборды, кабели, антенны, трубы, окна
-//
-// ВАЖНО: В конце НЕ закрывай mainGame() — продолжение в Части 3
+// ОСНОВНАЯ ИГРА
 // ============================================================
-
 function mainGame() {
 
-  // ============================================================
-  // СЦЕНА / КАМЕРА / РЕНДЕР
-  // ============================================================
+  // ==== СЦЕНА / КАМЕРА / РЕНДЕР ====
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x02000a);
   scene.fog = new THREE.FogExp2(0x08001a, 0.009);
 
-  const camera = new THREE.PerspectiveCamera(
-    72,                        // FOV
-    innerWidth / innerHeight,  // соотношение
-    0.1,                       // near
-    600                        // far
-  );
-
-  const renderer = new THREE.WebGLRenderer({
-    antialias: true,
-    powerPreference: 'high-performance'
-  });
+  const camera = new THREE.PerspectiveCamera(72, innerWidth/innerHeight, 0.1, 600);
+  const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
   renderer.setSize(innerWidth, innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
@@ -888,18 +354,11 @@ function mainGame() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.35;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-
   document.body.appendChild(renderer.domElement);
 
-
-  // ============================================================
-  // ОСВЕЩЕНИЕ
-  // ============================================================
-
-  // Общий мягкий свет
+  // ==== СВЕТ ====
   scene.add(new THREE.AmbientLight(0x1a0033, 0.7));
 
-  // Лунный / направленный свет
   const moon = new THREE.DirectionalLight(0x6644ff, 1.3);
   moon.position.set(50, 90, 40);
   moon.castShadow = true;
@@ -908,49 +367,28 @@ function mainGame() {
   moon.shadow.camera.right = 120;
   moon.shadow.camera.top = 120;
   moon.shadow.camera.bottom = -120;
-  moon.shadow.camera.near = 0.5;
   moon.shadow.camera.far = 300;
   moon.shadow.bias = -0.0005;
   scene.add(moon);
 
-  // Палитра неоновых цветов города
   const neonColors = [
-    0xff00ff, // розовый
-    0x00ffff, // голубой
-    0xff0066, // малиновый
-    0x00ff88, // изумрудный
-    0xffaa00, // янтарный
-    0xff3300, // оранжевый
-    0xaa00ff, // фиолетовый
-    0x00ffaa, // бирюзовый
-    0xff44aa  // фуксия
+    0xff00ff, 0x00ffff, 0xff0066, 0x00ff88, 0xffaa00,
+    0xff3300, 0xaa00ff, 0x00ffaa, 0xff44aa
   ];
 
-  // Много неоновых точечных огней по городу
   const cityLights = [];
-  for (let i = 0; i < 30; i++) {
-    const l = new THREE.PointLight(
-      neonColors[i % neonColors.length],
-      3,        // intensity
-      55        // distance
-    );
+  for (let i = 0; i < 20; i++) {
+    const l = new THREE.PointLight(neonColors[i % neonColors.length], 3, 50);
     l.position.set(
-      (Math.random() - 0.5) * 180,
-      8 + Math.random() * 22,
-      (Math.random() - 0.5) * 180
+      (Math.random() - 0.5) * 160,
+      8 + Math.random() * 18,
+      (Math.random() - 0.5) * 160
     );
     scene.add(l);
-    cityLights.push({
-      light: l,
-      base: 3,
-      phase: Math.random() * Math.PI * 2
-    });
+    cityLights.push({ light: l, base: 3, phase: Math.random() * Math.PI * 2 });
   }
 
-
-  // ============================================================
-  // ЗЕМЛЯ
-  // ============================================================
+  // ==== ЗЕМЛЯ ====
   const groundGeo = new THREE.PlaneGeometry(240, 240, 60, 60);
   const groundMat = new THREE.MeshStandardMaterial({
     color: 0x060010,
@@ -959,52 +397,37 @@ function mainGame() {
     emissive: 0x0f0022,
     emissiveIntensity: 0.5
   });
-
   const ground = new THREE.Mesh(groundGeo, groundMat);
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
 
-  // Неоновая сетка на земле
   const grid = new THREE.GridHelper(240, 120, 0xff00ff, 0x00ffff);
   grid.position.y = 0.02;
   grid.material.opacity = 0.35;
   grid.material.transparent = true;
   scene.add(grid);
 
-
-    // ============================================================
-  // ПРОСТОЙ РОВНЫЙ ЛАНДШАФТ (город убран для производительности)
-  // ============================================================
-  const buildingColliders = [];  // пусто — нет зданий
-
-  // Декор: несколько неоновых столбов по краям (для атмосферы)
-  // Они НЕ мешают игроку, просто стоят
-  const pillarDecor = [];
+  // ==== 16 НЕОНОВЫХ СТОЛБОВ ПО КРУГУ ====
+  const buildingColliders = [];
   for (let i = 0; i < 16; i++) {
     const angle = (i / 16) * Math.PI * 2;
     const r = 60;
     const x = Math.cos(angle) * r;
     const z = Math.sin(angle) * r;
-
     const col = neonColors[i % neonColors.length];
 
-    // Столб
     const pillar = new THREE.Mesh(
       new THREE.CylinderGeometry(0.4, 0.5, 12, 8),
       new THREE.MeshStandardMaterial({
-        color: 0x1a1a2e,
-        metalness: 0.9,
-        roughness: 0.3,
-        emissive: col,
-        emissiveIntensity: 0.3
+        color: 0x1a1a2e, metalness: 0.9, roughness: 0.3,
+        emissive: col, emissiveIntensity: 0.3
       })
     );
     pillar.position.set(x, 6, z);
     pillar.castShadow = true;
     scene.add(pillar);
 
-    // Светящаяся полоса на столбе
     const strip = new THREE.Mesh(
       new THREE.BoxGeometry(0.5, 10, 0.15),
       new THREE.MeshBasicMaterial({ color: col })
@@ -1012,7 +435,6 @@ function mainGame() {
     strip.position.set(x, 6, z);
     scene.add(strip);
 
-    // Огонёк наверху
     const topLight = new THREE.Mesh(
       new THREE.SphereGeometry(0.5, 10, 10),
       new THREE.MeshBasicMaterial({ color: col })
@@ -1020,512 +442,230 @@ function mainGame() {
     topLight.position.set(x, 12.5, z);
     scene.add(topLight);
 
-    // Точечный свет от столба
     const pl = new THREE.PointLight(col, 2, 20);
     pl.position.set(x, 12, z);
     scene.add(pl);
-
-    pillarDecor.push({ light: pl, base: 2, phase: Math.random() * Math.PI * 2 });
   }
 
-  // НЕ ЗАКРЫВАЙ mainGame() — продолжение в Части 3
- // ============================================================
-// ЧАСТЬ 3 — ПЕРСОНАЖ R15, КАМЕРА, УПРАВЛЕНИЕ
-// ============================================================
-
-
   // ============================================================
-  // ПЕРСОНАЖ R15 — ДЕТАЛЬНЫЙ КИБОРГ
+  // ПЕРСОНАЖ R15
   // ============================================================
-  // R15 = 15 частей тела:
-  // Голова, шея, UpperTorso, LowerTorso, таз,
-  // 2 плеча (Shoulder+UpperArm), 2 предплечья (LowerArm),
-  // 2 кисти (Hand) с пальцами,
-  // 2 бедра (UpperLeg), 2 голени (LowerLeg),
-  // 2 стопы (Foot)
-  // ============================================================
-
   const player = new THREE.Group();
   player.position.set(0, 0, 0);
 
-
-  // ------------------------------------------------------------
-  // МАТЕРИАЛЫ ПЕРСОНАЖА
-  // ------------------------------------------------------------
-  const M_dark = new THREE.MeshStandardMaterial({
-    color: 0x0d0d18, metalness: 0.95, roughness: 0.25,
-    emissive: 0x001122, emissiveIntensity: 0.2
-  });
-  const M_mid = new THREE.MeshStandardMaterial({
-    color: 0x1c1c2e, metalness: 0.9, roughness: 0.3,
-    emissive: 0x000022, emissiveIntensity: 0.15
-  });
-  const M_armor = new THREE.MeshStandardMaterial({
-    color: 0x0a0a14, metalness: 1.0, roughness: 0.15,
-    emissive: 0x00ffff, emissiveIntensity: 0.12
-  });
+  const M_dark  = new THREE.MeshStandardMaterial({ color:0x0d0d18, metalness:0.95, roughness:0.25, emissive:0x001122, emissiveIntensity:0.2 });
+  const M_mid   = new THREE.MeshStandardMaterial({ color:0x1c1c2e, metalness:0.9,  roughness:0.3,  emissive:0x000022, emissiveIntensity:0.15 });
+  const M_armor = new THREE.MeshStandardMaterial({ color:0x0a0a14, metalness:1.0,  roughness:0.15, emissive:0x00ffff, emissiveIntensity:0.12 });
   const M_glowC = new THREE.MeshBasicMaterial({ color: 0x00ffff });
   const M_glowP = new THREE.MeshBasicMaterial({ color: 0xff00ff });
   const M_glowG = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
   const M_glowO = new THREE.MeshBasicMaterial({ color: 0xff8800 });
   const M_white = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-
-  // ------------------------------------------------------------
-  // КОРЕНЬ СКЕЛЕТА
-  // ------------------------------------------------------------
   const root = new THREE.Group();
   player.add(root);
 
-
-  // ============================================================
-  // LOWER TORSO (таз) — часть №1-2
-  // ============================================================
+  // Таз
   const lowerTorso = new THREE.Group();
   lowerTorso.position.y = 0.95;
   root.add(lowerTorso);
 
-  // Основной блок таза
-  const pelvisMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.32, 0.36),
-    M_mid
-  );
+  const pelvisMesh = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.32, 0.36), M_mid);
   pelvisMesh.castShadow = true;
   lowerTorso.add(pelvisMesh);
 
-  // Пояс
-  const belt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.58, 0.1, 0.4),
-    M_armor
-  );
+  const belt = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.1, 0.4), M_armor);
   belt.position.y = 0.15;
   lowerTorso.add(belt);
 
-  // Светящаяся полоса на поясе
-  const beltGlow = new THREE.Mesh(
-    new THREE.BoxGeometry(0.6, 0.04, 0.42),
-    M_glowC
-  );
+  const beltGlow = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.42), M_glowC);
   beltGlow.position.y = 0.15;
   lowerTorso.add(beltGlow);
 
-  // Маленькая капсула сбоку пояса (аптечка)
-  const capsule = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.06, 0.06, 0.2, 8),
-    M_glowG
-  );
-  capsule.rotation.z = Math.PI / 2;
-  capsule.position.set(0.35, 0, 0);
-  lowerTorso.add(capsule);
-
-
-  // ============================================================
-  // UPPER TORSO — часть №3
-  // ============================================================
+  // Грудь
   const upperTorso = new THREE.Group();
   upperTorso.position.y = 0.3;
   lowerTorso.add(upperTorso);
 
-  // Главный корпус (грудь)
-  const chest = new THREE.Mesh(
-    new THREE.BoxGeometry(0.72, 0.72, 0.44),
-    M_mid
-  );
+  const chest = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.72, 0.44), M_mid);
   chest.position.y = 0.3;
   chest.castShadow = true;
   upperTorso.add(chest);
 
-  // Передние броневые пластины (3 шт)
-  const plate1 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 0.28, 0.09),
-    M_armor
-  );
+  const plate1 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.28, 0.09), M_armor);
   plate1.position.set(0, 0.5, 0.24);
   upperTorso.add(plate1);
-
-  const plate2 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.22, 0.09),
-    M_armor
-  );
+  const plate2 = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.22, 0.09), M_armor);
   plate2.position.set(0, 0.2, 0.24);
   upperTorso.add(plate2);
-
-  const plate3 = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 0.18, 0.09),
-    M_armor
-  );
+  const plate3 = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.18, 0.09), M_armor);
   plate3.position.set(0, -0.05, 0.24);
   upperTorso.add(plate3);
 
-  // Реактор-сердце (внешнее кольцо)
-  const coreOuter = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.14, 0.14, 0.1, 20),
-    M_glowC
-  );
+  const coreOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.1, 20), M_glowC);
   coreOuter.rotation.x = Math.PI / 2;
   coreOuter.position.set(0, 0.36, 0.27);
   upperTorso.add(coreOuter);
 
-  // Реактор-сердце (внутренний белый)
-  const coreInner = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.06, 0.06, 0.12, 16),
-    M_white
-  );
+  const coreInner = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.12, 16), M_white);
   coreInner.rotation.x = Math.PI / 2;
   coreInner.position.set(0, 0.36, 0.28);
   upperTorso.add(coreInner);
 
-  // Вращающееся кольцо-пушка вокруг реактора
-  const coreRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.19, 0.025, 8, 24),
-    M_glowP
-  );
+  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.025, 8, 24), M_glowP);
   coreRing.position.set(0, 0.36, 0.28);
   upperTorso.add(coreRing);
 
-  // Ремни безопасности (по диагонали)
-  const beltL = new THREE.Mesh(
-    new THREE.BoxGeometry(0.06, 0.5, 0.05),
-    M_armor
-  );
+  const beltL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.05), M_armor);
   beltL.position.set(-0.15, 0.3, 0.25);
   beltL.rotation.z = 0.3;
   upperTorso.add(beltL);
-
   const beltR = beltL.clone();
   beltR.position.x = 0.15;
   beltR.rotation.z = -0.3;
   upperTorso.add(beltR);
 
-  // Плечи — массивные наплечники
-  const shL = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 0.3, 0.42),
-    M_armor
-  );
+  const shL = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.3, 0.42), M_armor);
   shL.position.set(-0.5, 0.5, 0);
   shL.castShadow = true;
   upperTorso.add(shL);
-
   const shR = shL.clone();
   shR.position.x = 0.5;
   upperTorso.add(shR);
 
-  // Светящиеся накладки на плечах
-  const shGlowL = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.08, 0.44),
-    M_glowC
-  );
+  const shGlowL = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.08, 0.44), M_glowC);
   shGlowL.position.set(-0.5, 0.66, 0);
   upperTorso.add(shGlowL);
-
   const shGlowR = shGlowL.clone();
   shGlowR.position.x = 0.5;
   upperTorso.add(shGlowR);
 
-  // Наплечные болты (декор)
-  for (let s = -1; s <= 1; s += 2) {
-    for (let i = -1; i <= 1; i += 2) {
-      const bolt = new THREE.Mesh(
-        new THREE.SphereGeometry(0.03, 6, 6),
-        M_glowG
-      );
-      bolt.position.set(s * 0.5, 0.5, i * 0.15);
-      upperTorso.add(bolt);
-    }
-  }
-
-
-  // ============================================================
-  // ШЕЯ — часть №4
-  // ============================================================
-  const neck = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.11, 0.14, 0.12, 14),
-    M_dark
-  );
+  // Шея
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.12, 14), M_dark);
   neck.position.y = 0.72;
   upperTorso.add(neck);
 
-
-  // ============================================================
-  // ГОЛОВА — часть №5
-  // ============================================================
+  // Голова
   const headGroup = new THREE.Group();
   headGroup.position.y = 0.9;
   upperTorso.add(headGroup);
 
-  // Череп
-  const skull = new THREE.Mesh(
-    new THREE.BoxGeometry(0.44, 0.48, 0.44),
-    M_dark
-  );
+  const skull = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.48, 0.44), M_dark);
   skull.castShadow = true;
   headGroup.add(skull);
 
-  // Затылок (броня)
-  const backHead = new THREE.Mesh(
-    new THREE.BoxGeometry(0.36, 0.4, 0.08),
-    M_armor
-  );
+  const backHead = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.4, 0.08), M_armor);
   backHead.position.z = -0.23;
   headGroup.add(backHead);
 
-  // Боковые вставки (наушники)
-  const earL = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.24, 0.3),
-    M_armor
-  );
+  const earL = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.24, 0.3), M_armor);
   earL.position.set(-0.26, 0.02, 0);
   headGroup.add(earL);
-
   const earR = earL.clone();
   earR.position.x = 0.26;
   headGroup.add(earR);
 
-  // Неоновые вставки на наушниках
-  const earGlowL = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 0.1, 0.16),
-    M_glowP
-  );
+  const earGlowL = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.1, 0.16), M_glowP);
   earGlowL.position.set(-0.29, 0.08, 0);
   headGroup.add(earGlowL);
-
   const earGlowR = earGlowL.clone();
   earGlowR.position.x = 0.29;
   headGroup.add(earGlowR);
 
-  // Визор (задняя тёмная часть)
-  const visorBack = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 0.14, 0.08),
-    M_dark
-  );
-  visorBack.position.set(0, 0.06, 0.22);
-  headGroup.add(visorBack);
-
-  // Визор (светящаяся голубая полоса)
-  const visor = new THREE.Mesh(
-    new THREE.BoxGeometry(0.44, 0.08, 0.05),
-    M_glowC
-  );
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.08, 0.05), M_glowC);
   visor.position.set(0, 0.06, 0.25);
   headGroup.add(visor);
 
-  // 2 светящихся глаза
-  const eyeL = new THREE.Mesh(
-    new THREE.SphereGeometry(0.028, 8, 8),
-    M_glowP
-  );
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 8), M_glowP);
   eyeL.position.set(-0.11, 0.06, 0.28);
   headGroup.add(eyeL);
-
   const eyeR = eyeL.clone();
   eyeR.position.x = 0.11;
   headGroup.add(eyeR);
 
-  // Маска-респиратор
-  const mask = new THREE.Mesh(
-    new THREE.BoxGeometry(0.3, 0.16, 0.12),
-    M_armor
-  );
+  const mask = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.16, 0.12), M_armor);
   mask.position.set(0, -0.14, 0.22);
   headGroup.add(mask);
 
-  // Трубки респиратора (2 шт — по бокам маски)
-  for (let s = -1; s <= 1; s += 2) {
-    const tube = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.022, 0.2, 6),
-      M_glowC
-    );
-    tube.position.set(s * 0.17, -0.17, 0.23);
-    tube.rotation.x = Math.PI / 2;
-    headGroup.add(tube);
-  }
-
-  // Маленькие вентиляционные отверстия на маске
-  for (let i = -1; i <= 1; i++) {
-    const vent = new THREE.Mesh(
-      new THREE.BoxGeometry(0.04, 0.02, 0.02),
-      M_glowG
-    );
-    vent.position.set(i * 0.06, -0.14, 0.29);
-    headGroup.add(vent);
-  }
-
-  // Антенна-сканирование
-  const antBase = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6),
-    M_dark
-  );
+  // Антенна
+  const antBase = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6), M_dark);
   antBase.position.set(0.16, 0.29, 0);
   headGroup.add(antBase);
-
-  const antRod = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.012, 0.012, 0.3, 6),
-    M_glowO
-  );
+  const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 6), M_glowO);
   antRod.position.set(0.16, 0.48, 0);
   headGroup.add(antRod);
-
-  const antTip = new THREE.Mesh(
-    new THREE.SphereGeometry(0.04, 8, 8),
-    M_glowO
-  );
+  const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), M_glowO);
   antTip.position.set(0.16, 0.65, 0);
   headGroup.add(antTip);
 
-
-  // ============================================================
-  // R15 РУКА — части №6-11
-  // Shoulder → UpperArm → Elbow → LowerArm → Wrist → Hand
-  // ============================================================
+  // ==== РУКА ====
   function makeArm(side) {
-    // ПЛЕЧО (ShoulderJoint + UpperArm)
     const shoulder = new THREE.Group();
     shoulder.position.set(side * 0.6, 0.5, 0);
     upperTorso.add(shoulder);
 
-    // Шаровой сустав
-    const shJoint = new THREE.Mesh(
-      new THREE.SphereGeometry(0.12, 10, 10),
-      M_armor
-    );
+    const shJoint = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), M_armor);
     shoulder.add(shJoint);
 
-    // Верхняя часть руки
-    const upperArm = new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, 0.45, 0.24),
-      M_mid
-    );
+    const upperArm = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.45, 0.24), M_mid);
     upperArm.position.y = -0.28;
     upperArm.castShadow = true;
     shoulder.add(upperArm);
 
-    // Неоновая полоса на верхней части
-    const armUpperGlow = new THREE.Mesh(
-      new THREE.BoxGeometry(0.23, 0.05, 0.02),
-      M_glowC
-    );
-    armUpperGlow.position.set(0, -0.28, 0.13);
-    shoulder.add(armUpperGlow);
-
-    // ЛОКОТЬ (ElbowJoint)
     const elbow = new THREE.Group();
     elbow.position.y = -0.55;
     shoulder.add(elbow);
 
-    const elJoint = new THREE.Mesh(
-      new THREE.SphereGeometry(0.11, 10, 10),
-      M_armor
-    );
+    const elJoint = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), M_armor);
     elbow.add(elJoint);
 
-    // ПРЕДПЛЕЧЬЕ (LowerArm)
-    const lowerArm = new THREE.Mesh(
-      new THREE.BoxGeometry(0.2, 0.5, 0.22),
-      M_dark
-    );
+    const lowerArm = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.5, 0.22), M_dark);
     lowerArm.position.y = -0.3;
     lowerArm.castShadow = true;
     elbow.add(lowerArm);
 
-    // Имплант-лазер (блок на предплечье)
-    const laserBox = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.24, 0.32),
-      M_armor
-    );
+    const laserBox = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.24, 0.32), M_armor);
     laserBox.position.set(0, -0.28, 0.02);
     elbow.add(laserBox);
 
-    // Золотые светящиеся полосы на импланте
-    const ls1 = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32, 0.04, 0.02),
-      M_glowG
-    );
+    const ls1 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.02), M_glowG);
     ls1.position.set(0, -0.22, 0.18);
     elbow.add(ls1);
-
-    const ls2 = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32, 0.04, 0.02),
-      M_glowG
-    );
+    const ls2 = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.04, 0.02), M_glowG);
     ls2.position.set(0, -0.34, 0.18);
     elbow.add(ls2);
 
-    // Дуло импланта (цилиндр вперёд)
-    const barrel = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.055, 0.06, 0.2, 12),
-      M_glowG
-    );
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.2, 12), M_glowG);
     barrel.rotation.x = Math.PI / 2;
     barrel.position.set(0, -0.28, 0.24);
     elbow.add(barrel);
 
-    // Светящийся кончик дула
-    const barrelTip = new THREE.Mesh(
-      new THREE.SphereGeometry(0.065, 10, 10),
-      M_glowO
-    );
+    const barrelTip = new THREE.Mesh(new THREE.SphereGeometry(0.065, 10, 10), M_glowO);
     barrelTip.position.set(0, -0.28, 0.35);
     elbow.add(barrelTip);
 
-    // ЗАПЯСТЬЕ (WristJoint)
-    const wrist = new THREE.Mesh(
-      new THREE.SphereGeometry(0.08, 8, 8),
-      M_armor
-    );
+    const wrist = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), M_armor);
     wrist.position.y = -0.62;
     elbow.add(wrist);
 
-    // КИСТЬ (Hand) — часть №11
     const hand = new THREE.Group();
     hand.position.y = -0.72;
     elbow.add(hand);
 
-    // Ладонь
-    const palm = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.12, 0.22),
-      M_dark
-    );
+    const palm = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.12, 0.22), M_dark);
     hand.add(palm);
 
-    // 4 пальца (каждый с 2 фалангами + светящийся кончик)
     for (let i = 0; i < 4; i++) {
-      const fingerGroup = new THREE.Group();
-      fingerGroup.position.set(-0.06 + i * 0.04, -0.09, 0.04);
-
-      // 1-я фаланга
-      const f1 = new THREE.Mesh(
-        new THREE.BoxGeometry(0.035, 0.07, 0.04),
-        M_dark
-      );
+      const fg = new THREE.Group();
+      fg.position.set(-0.06 + i * 0.04, -0.09, 0.04);
+      const f1 = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.07, 0.04), M_dark);
       f1.position.y = -0.035;
-      fingerGroup.add(f1);
-
-      // 2-я фаланга
-      const f2 = new THREE.Mesh(
-        new THREE.BoxGeometry(0.033, 0.06, 0.038),
-        M_armor
-      );
+      fg.add(f1);
+      const f2 = new THREE.Mesh(new THREE.BoxGeometry(0.033, 0.06, 0.038), M_armor);
       f2.position.y = -0.1;
-      fingerGroup.add(f2);
-
-      // Светящийся кончик
-      const fTip = new THREE.Mesh(
-        new THREE.SphereGeometry(0.02, 6, 6),
-        M_glowP
-      );
-      fTip.position.y = -0.135;
-      fingerGroup.add(fTip);
-
-      hand.add(fingerGroup);
+      fg.add(f2);
+      hand.add(fg);
     }
-
-    // Большой палец
-    const thumb = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, 0.09, 0.045),
-      M_dark
-    );
-    thumb.position.set(side * -0.09, -0.07, 0);
-    hand.add(thumb);
 
     return { group: shoulder, elbow: elbow, hand: hand };
   }
@@ -1533,108 +673,46 @@ function mainGame() {
   const armL = makeArm(-1);
   const armR = makeArm(1);
 
-
-  // ============================================================
-  // R15 НОГА — части №12-15
-  // Hip → UpperLeg → Knee → LowerLeg → Ankle → Foot
-  // ============================================================
+  // ==== НОГА ====
   function makeLeg(side) {
-    // БЕДРО (HipJoint + UpperLeg)
     const hip = new THREE.Group();
     hip.position.set(side * 0.19, 0.82, 0);
     root.add(hip);
 
-    // Шаровой сустав
-    const hipJoint = new THREE.Mesh(
-      new THREE.SphereGeometry(0.13, 10, 10),
-      M_armor
-    );
+    const hipJoint = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), M_armor);
     hip.add(hipJoint);
 
-    // Верхняя часть ноги (бедро)
-    const upperLeg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.5, 0.32),
-      M_mid
-    );
+    const upperLeg = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.5, 0.32), M_mid);
     upperLeg.position.y = -0.3;
     upperLeg.castShadow = true;
     hip.add(upperLeg);
 
-    // Броня на бедре
-    const thighArmor = new THREE.Mesh(
-      new THREE.BoxGeometry(0.32, 0.2, 0.34),
-      M_armor
-    );
+    const thighArmor = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.2, 0.34), M_armor);
     thighArmor.position.y = -0.22;
     hip.add(thighArmor);
 
-    // Кольцо-неон на бедре
-    const thighRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.17, 0.02, 6, 16),
-      M_glowC
-    );
-    thighRing.rotation.x = Math.PI / 2;
-    thighRing.position.y = -0.36;
-    hip.add(thighRing);
-
-    // КОЛЕНО (KneeJoint)
     const knee = new THREE.Group();
     knee.position.y = -0.6;
     hip.add(knee);
 
-    const kneeJoint = new THREE.Mesh(
-      new THREE.SphereGeometry(0.13, 10, 10),
-      M_armor
-    );
+    const kneeJoint = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), M_armor);
     knee.add(kneeJoint);
 
-    // ГОЛЕНЬ (LowerLeg)
-    const lowerLeg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, 0.52, 0.28),
-      M_dark
-    );
+    const lowerLeg = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.52, 0.28), M_dark);
     lowerLeg.position.y = -0.32;
     lowerLeg.castShadow = true;
     knee.add(lowerLeg);
 
-    // Неоновая полоса на голени
-    const shinGlow = new THREE.Mesh(
-      new THREE.BoxGeometry(0.05, 0.42, 0.04),
-      M_glowC
-    );
+    const shinGlow = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.42, 0.04), M_glowC);
     shinGlow.position.set(side * 0.11, -0.32, 0.13);
     knee.add(shinGlow);
 
-    // Вторая полоса (внутренняя)
-    const shinGlow2 = new THREE.Mesh(
-      new THREE.BoxGeometry(0.05, 0.3, 0.04),
-      M_glowP
-    );
-    shinGlow2.position.set(-side * 0.11, -0.32, 0.13);
-    knee.add(shinGlow2);
-
-    // ЛОДЫЖКА (AnkleJoint)
-    const ankle = new THREE.Mesh(
-      new THREE.SphereGeometry(0.1, 8, 8),
-      M_armor
-    );
-    ankle.position.y = -0.62;
-    knee.add(ankle);
-
-    // СТОПА (Foot)
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.14, 0.44),
-      M_armor
-    );
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.14, 0.44), M_armor);
     foot.position.set(0, -0.72, 0.06);
     foot.castShadow = true;
     knee.add(foot);
 
-    // Светящаяся подошва
-    const sole = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.03, 0.44),
-      M_glowP
-    );
+    const sole = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.03, 0.44), M_glowP);
     sole.position.set(0, -0.8, 0.06);
     knee.add(sole);
 
@@ -1644,352 +722,180 @@ function mainGame() {
   const legL = makeLeg(-1);
   const legR = makeLeg(1);
 
-  // Добавляем игрока в сцену
   scene.add(player);
 
-
   // ============================================================
-  // КАМЕРА — ОРБИТАЛЬНАЯ, ВОКРУГ ПЕРСОНАЖА
+  // КАМЕРА И МЫШЬ
   // ============================================================
-  let yaw = 0;                 // горизонтальный угол
-  let pitch = 0.3;             // вертикальный угол
+  let yaw = 0;
+  let pitch = 0.3;
   const PITCH_MIN = -0.2;
   const PITCH_MAX = 1.1;
-  let cameraDistance = 7;      // дистанция камеры
-  let isLocked = false;        // захвачена ли мышь
+  let cameraDistance = 8;
 
+  // Позиция мыши
+  let mouseScreenX = innerWidth / 2;
+  let mouseScreenY = innerHeight / 2;
 
-  // ------------------------------------------------------------
-  // POINTER LOCK — захват мыши
-  // ------------------------------------------------------------
-  const lockHint = document.getElementById('lockHint');
+  // Целевые углы камеры (следуют за мышью)
+  let camTargetYaw = 0;
+  let camTargetPitch = 0.3;
 
-  document.addEventListener('pointerlockchange', function() {
-    isLocked = document.pointerLockElement === renderer.domElement;
-    lockHint.style.display = isLocked ? 'none' : 'block';
-  });
-
-  renderer.domElement.addEventListener('click', function() {
-    if (!isLocked) {
-      renderer.domElement.requestPointerLock();
-    }
-  });
-
-  // Показываем подсказку при старте
-  lockHint.style.display = 'block';
-  lockHint.addEventListener('click', function() {
-    renderer.domElement.requestPointerLock();
-  });
-
-
-  // ------------------------------------------------------------
-  // МЫШЬ — поворот камеры
-  // ------------------------------------------------------------
+  // Мышь — без pointer lock
   document.addEventListener('mousemove', function(e) {
-    if (!isLocked) return;
-    const sens = 0.0022;
-    yaw -= e.movementX * sens;
-    pitch += e.movementY * sens;
-    pitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, pitch));
+    mouseScreenX = e.clientX;
+    mouseScreenY = e.clientY;
+
+    const nx = (e.clientX / innerWidth) * 2 - 1;
+    const ny = (e.clientY / innerHeight) * 2 - 1;
+
+    // Камера поворачивается в сторону мыши
+    camTargetYaw = -nx * 1.3;
+    camTargetPitch = 0.3 + ny * 0.7;
+    camTargetPitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, camTargetPitch));
   });
 
-
-  // ------------------------------------------------------------
-  // КОЛЕСО — зум камеры
-  // ------------------------------------------------------------
+  // Колёсико — зум
   addEventListener('wheel', function(e) {
     cameraDistance += e.deltaY * 0.005;
     cameraDistance = Math.max(3, Math.min(14, cameraDistance));
   }, { passive: true });
 
-
-  // ------------------------------------------------------------
-  // КЛАВИАТУРА
-  // ------------------------------------------------------------
+  // Клавиатура
   const keys = {};
   addEventListener('keydown', function(e) { keys[e.code] = true; });
   addEventListener('keyup',   function(e) { keys[e.code] = false; });
 
-  // НЕ ЗАКРЫВАЙ mainGame() — продолжение в Части 4
- // ============================================================
-// ЧАСТЬ 4 — ВРАГИ, ЛАЗЕРЫ, МИНЫ, БОНУСЫ, HUD
-// ============================================================
-
-
   // ============================================================
-  // ВРАГИ — 20 ВИДОВ ЛЕТАЮЩИХ РОБОТОВ С НОЖАМИ
+  // ВРАГИ
   // ============================================================
   const enemies = [];
 
-  // Все 20 видов роботов — разные цвета, размеры, характеристики
   const robotStyles = [
-    { name:'Scout',     color:0xff0055, size:0.85, hp:35,  speed:2.6, dmg:8,  acc:0xff2277 },
-    { name:'Bruiser',   color:0xff4400, size:1.15, hp:75,  speed:1.6, dmg:14, acc:0xff7722 },
-    { name:'Drone',     color:0x00ffff, size:0.75, hp:25,  speed:3.4, dmg:6,  acc:0x88ffff },
-    { name:'Sentinel',  color:0x00ff88, size:1.0,  hp:55,  speed:2.0, dmg:10, acc:0x88ffcc },
-    { name:'Striker',   color:0xff00ff, size:0.95, hp:50,  speed:2.7, dmg:12, acc:0xff88ff },
-    { name:'Warden',    color:0xaa00ff, size:1.2,  hp:85,  speed:1.5, dmg:16, acc:0xcc88ff },
-    { name:'Reaper',    color:0xff2200, size:1.05, hp:60,  speed:2.3, dmg:15, acc:0xff6644 },
-    { name:'Phantom',   color:0x8800ff, size:0.85, hp:40,  speed:3.1, dmg:9,  acc:0xbb88ff },
-    { name:'Titan',     color:0xffaa00, size:1.4,  hp:110, speed:1.3, dmg:18, acc:0xffcc66 },
-    { name:'Spider',    color:0x00ff44, size:0.75, hp:30,  speed:3.0, dmg:7,  acc:0x88ffaa },
-    { name:'Crusher',   color:0xff0066, size:1.3,  hp:95,  speed:1.5, dmg:20, acc:0xff44aa },
-    { name:'Wasp',      color:0xffee00, size:0.6,  hp:20,  speed:3.7, dmg:5,  acc:0xffff88 },
-    { name:'Golem',     color:0x884400, size:1.5,  hp:130, speed:1.1, dmg:22, acc:0xcc8844 },
-    { name:'Assassin',  color:0x0000ff, size:0.9,  hp:45,  speed:3.4, dmg:13, acc:0x6688ff },
-    { name:'Enforcer',  color:0x00aaff, size:1.1,  hp:70,  speed:1.8, dmg:12, acc:0x66ccff },
-    { name:'Harbinger', color:0xff0088, size:1.25, hp:90,  speed:1.7, dmg:17, acc:0xff66bb },
-    { name:'Specter',   color:0x44ffaa, size:0.8,  hp:28,  speed:3.3, dmg:8,  acc:0x88ffcc },
-    { name:'Destroyer', color:0xff3300, size:1.35, hp:100, speed:1.4, dmg:19, acc:0xff7744 },
-    { name:'Nano',      color:0xffffff, size:0.6,  hp:22,  speed:3.6, dmg:6,  acc:0xcccccc },
-    { name:'Overlord',  color:0xff00aa, size:1.6,  hp:160, speed:1.0, dmg:25, acc:0xff66dd },
+    { name:'Scout',     color:0xff0055, hp:35,  speed:2.6, dmg:8,  acc:0xff2277 },
+    { name:'Bruiser',   color:0xff4400, hp:75,  speed:1.6, dmg:14, acc:0xff7722 },
+    { name:'Drone',     color:0x00ffff, hp:25,  speed:3.4, dmg:6,  acc:0x88ffff },
+    { name:'Sentinel',  color:0x00ff88, hp:55,  speed:2.0, dmg:10, acc:0x88ffcc },
+    { name:'Striker',   color:0xff00ff, hp:50,  speed:2.7, dmg:12, acc:0xff88ff },
+    { name:'Warden',    color:0xaa00ff, hp:85,  speed:1.5, dmg:16, acc:0xcc88ff },
+    { name:'Reaper',    color:0xff2200, hp:60,  speed:2.3, dmg:15, acc:0xff6644 },
+    { name:'Phantom',   color:0x8800ff, hp:40,  speed:3.1, dmg:9,  acc:0xbb88ff },
+    { name:'Titan',     color:0xffaa00, hp:110, speed:1.3, dmg:18, acc:0xffcc66 },
+    { name:'Spider',    color:0x00ff44, hp:30,  speed:3.0, dmg:7,  acc:0x88ffaa },
+    { name:'Crusher',   color:0xff0066, hp:95,  speed:1.5, dmg:20, acc:0xff44aa },
+    { name:'Wasp',      color:0xffee00, hp:20,  speed:3.7, dmg:5,  acc:0xffff88 },
+    { name:'Golem',     color:0x884400, hp:130, speed:1.1, dmg:22, acc:0xcc8844 },
+    { name:'Assassin',  color:0x0000ff, hp:45,  speed:3.4, dmg:13, acc:0x6688ff },
+    { name:'Enforcer',  color:0x00aaff, hp:70,  speed:1.8, dmg:12, acc:0x66ccff },
+    { name:'Harbinger', color:0xff0088, hp:90,  speed:1.7, dmg:17, acc:0xff66bb },
+    { name:'Specter',   color:0x44ffaa, hp:28,  speed:3.3, dmg:8,  acc:0x88ffcc },
+    { name:'Destroyer', color:0xff3300, hp:100, speed:1.4, dmg:19, acc:0xff7744 },
+    { name:'Nano',      color:0xffffff, hp:22,  speed:3.6, dmg:6,  acc:0xcccccc },
+    { name:'Overlord',  color:0xff00aa, hp:160, speed:1.0, dmg:25, acc:0xff66dd },
   ];
 
-
-  // ------------------------------------------------------------
-  // СВЕТЯЩИЙСЯ НОЖ
-  // ------------------------------------------------------------
-  function makeKnife(color) {
-    const g = new THREE.Group();
-
-    // Рукоять
-    const hilt = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, 0.22, 0.06),
-      new THREE.MeshStandardMaterial({
-        color: 0x111111, metalness: 1, roughness: 0.3
-      })
-    );
-    g.add(hilt);
-
-    // Гарда
-    const guard = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.03, 0.08),
-      new THREE.MeshStandardMaterial({
-        color: 0x222222, metalness: 1, roughness: 0.2
-      })
-    );
-    guard.position.y = 0.11;
-    g.add(guard);
-
-    // Лезвие (светящееся)
-    const blade = new THREE.Mesh(
-      new THREE.ConeGeometry(0.05, 0.5, 4),
-      new THREE.MeshBasicMaterial({ color: color })
-    );
-    blade.position.y = 0.4;
-    g.add(blade);
-
-    // Ореол вокруг лезвия
-    const bladeGlow = new THREE.Mesh(
-      new THREE.ConeGeometry(0.09, 0.55, 4),
-      new THREE.MeshBasicMaterial({
-        color: color, transparent: true, opacity: 0.35
-      })
-    );
-    bladeGlow.position.y = 0.4;
-    g.add(bladeGlow);
-
-    return g;
-  }
-
-
-  // ------------------------------------------------------------
-  // СОЗДАНИЕ ОДНОГО РОБОТА
-  // ------------------------------------------------------------
   function createRobot(style, isBoss) {
     const scale = isBoss ? 2.3 : 1;
     const group = new THREE.Group();
 
-    const cMain = style.color;
-    const cAcc = style.acc;
-
     const mBody = new THREE.MeshStandardMaterial({
-      color: cMain, metalness: 0.9, roughness: 0.28,
-      emissive: cMain, emissiveIntensity: 0.4
+      color: style.color, metalness: 0.9, roughness: 0.28,
+      emissive: style.color, emissiveIntensity: 0.4
     });
     const mDark = new THREE.MeshStandardMaterial({
       color: 0x0a0a14, metalness: 0.95, roughness: 0.2,
-      emissive: cAcc, emissiveIntensity: 0.18
+      emissive: style.acc, emissiveIntensity: 0.18
     });
-    const mAcc = new THREE.MeshBasicMaterial({ color: cAcc });
+    const mAcc = new THREE.MeshBasicMaterial({ color: style.acc });
     const mEye = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-    // ЯДРО — светящийся шар по центру
-    const core = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2 * scale, 12, 12),
-      mAcc
-    );
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.2 * scale, 12, 12), mAcc);
     core.position.y = 1.5 * scale;
     group.add(core);
 
-    // ПЛАЗМЕННАЯ АУРА — прозрачная сфера вокруг ядра
     const aura = new THREE.Mesh(
       new THREE.SphereGeometry(0.4 * scale, 14, 14),
-      new THREE.MeshBasicMaterial({
-        color: cAcc, transparent: true, opacity: 0.15
-      })
+      new THREE.MeshBasicMaterial({ color: style.acc, transparent: true, opacity: 0.15 })
     );
     aura.position.y = 1.5 * scale;
     group.add(aura);
 
-    // ГРАВИТАЦИОННЫЕ КОЛЬЦА (2 шт)
-    const ring1 = new THREE.Mesh(
-      new THREE.TorusGeometry(0.7 * scale, 0.04 * scale, 6, 24),
-      mAcc
-    );
+    const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.7 * scale, 0.04 * scale, 6, 24), mAcc);
     ring1.rotation.x = Math.PI / 2;
     ring1.position.y = 1.5 * scale;
     group.add(ring1);
 
-    const ring2 = new THREE.Mesh(
-      new THREE.TorusGeometry(0.9 * scale, 0.03 * scale, 6, 24),
-      mAcc
-    );
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.9 * scale, 0.03 * scale, 6, 24), mAcc);
     ring2.rotation.x = Math.PI / 2;
     ring2.position.y = 1.5 * scale;
     group.add(ring2);
 
-    // РУКИ С НОЖАМИ (2 шт)
+    // Руки с ножами
     for (let s = -1; s <= 1; s += 2) {
-      const armGroup = new THREE.Group();
-      armGroup.position.set(s * 0.35 * scale, 1.5 * scale, 0);
+      const armG = new THREE.Group();
+      armG.position.set(s * 0.35 * scale, 1.5 * scale, 0);
 
-      // Верхняя часть руки
-      const upper = new THREE.Mesh(
-        new THREE.BoxGeometry(0.14 * scale, 0.5 * scale, 0.14 * scale),
-        mBody
-      );
+      const upper = new THREE.Mesh(new THREE.BoxGeometry(0.14*scale, 0.5*scale, 0.14*scale), mBody);
       upper.position.y = -0.25 * scale;
-      upper.castShadow = true;
-      armGroup.add(upper);
+      armG.add(upper);
 
-      // Локоть
-      const el = new THREE.Mesh(
-        new THREE.SphereGeometry(0.09 * scale, 8, 8),
-        mDark
-      );
-      el.position.y = -0.5 * scale;
-      armGroup.add(el);
-
-      // Предплечье
-      const fore = new THREE.Mesh(
-        new THREE.BoxGeometry(0.12 * scale, 0.45 * scale, 0.12 * scale),
-        mDark
-      );
+      const fore = new THREE.Mesh(new THREE.BoxGeometry(0.12*scale, 0.45*scale, 0.12*scale), mDark);
       fore.position.y = -0.75 * scale;
-      armGroup.add(fore);
+      armG.add(fore);
 
-      // Кисть
-      const hand = new THREE.Mesh(
-        new THREE.BoxGeometry(0.14 * scale, 0.12 * scale, 0.14 * scale),
-        mBody
-      );
+      const hand = new THREE.Mesh(new THREE.BoxGeometry(0.14*scale, 0.12*scale, 0.14*scale), mBody);
       hand.position.y = -1.0 * scale;
-      armGroup.add(hand);
+      armG.add(hand);
 
-      // Нож в руке
-      const knife = makeKnife(cAcc);
+      // Нож
+      const knife = new THREE.Group();
+      const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.06), new THREE.MeshStandardMaterial({ color:0x111111, metalness:1, roughness:0.3 }));
+      knife.add(hilt);
+      const blade = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.5, 4), new THREE.MeshBasicMaterial({ color: style.acc }));
+      blade.position.y = 0.4;
+      knife.add(blade);
+      const glow = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.55, 4), new THREE.MeshBasicMaterial({ color: style.acc, transparent:true, opacity:0.35 }));
+      glow.position.y = 0.4;
+      knife.add(glow);
       knife.scale.setScalar(scale * 1.2);
       knife.position.y = -1.15 * scale;
-      knife.rotation.x = Math.PI; // острие вниз
-      armGroup.add(knife);
+      knife.rotation.x = Math.PI;
+      armG.add(knife);
 
-      group.add(armGroup);
+      group.add(armG);
 
-      if (s === 1) group.userData.rightArm = armGroup;
-      else group.userData.leftArm = armGroup;
+      if (s === 1) group.userData.rightArm = armG;
+      else group.userData.leftArm = armG;
     }
 
-    // ТОРС
-    const torso = new THREE.Mesh(
-      new THREE.BoxGeometry(0.5 * scale, 0.5 * scale, 0.4 * scale),
-      mBody
-    );
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5*scale, 0.5*scale, 0.4*scale), mBody);
     torso.position.y = 1.5 * scale;
     torso.castShadow = true;
     group.add(torso);
 
-    // ГОЛОВА
-    const head = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4 * scale, 0.38 * scale, 0.4 * scale),
-      mDark
-    );
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.4*scale, 0.38*scale, 0.4*scale), mDark);
     head.position.y = 2.0 * scale;
     head.castShadow = true;
     group.add(head);
 
-    // ВИЗОР (светящаяся полоса)
-    const visor = new THREE.Mesh(
-      new THREE.BoxGeometry(0.35 * scale, 0.1 * scale, 0.05 * scale),
-      mEye
-    );
-    visor.position.set(0, 2.02 * scale, 0.22 * scale);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.35*scale, 0.1*scale, 0.05*scale), mEye);
+    visor.position.set(0, 2.02*scale, 0.22*scale);
     group.add(visor);
 
-    // 2 маленьких глаза
-    const e1 = new THREE.Mesh(
-      new THREE.SphereGeometry(0.03 * scale, 8, 8),
-      mEye
-    );
-    e1.position.set(-0.08 * scale, 2.02 * scale, 0.25 * scale);
+    const e1 = new THREE.Mesh(new THREE.SphereGeometry(0.03*scale, 8, 8), mEye);
+    e1.position.set(-0.08*scale, 2.02*scale, 0.25*scale);
     group.add(e1);
-
     const e2 = e1.clone();
     e2.position.x = 0.08 * scale;
     group.add(e2);
 
-    // АНТЕННА
-    const antRod = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.015 * scale, 0.015 * scale, 0.28 * scale, 6),
-      mAcc
-    );
-    antRod.position.set(0.14 * scale, 2.35 * scale, 0);
+    const antRod = new THREE.Mesh(new THREE.CylinderGeometry(0.015*scale, 0.015*scale, 0.28*scale, 6), mAcc);
+    antRod.position.set(0.14*scale, 2.35*scale, 0);
     group.add(antRod);
-
-    const antTip = new THREE.Mesh(
-      new THREE.SphereGeometry(0.045 * scale, 8, 8),
-      mAcc
-    );
-    antTip.position.set(0.14 * scale, 2.5 * scale, 0);
+    const antTip = new THREE.Mesh(new THREE.SphereGeometry(0.045*scale, 8, 8), mAcc);
+    antTip.position.set(0.14*scale, 2.5*scale, 0);
     group.add(antTip);
 
-    // НОГИ (висят внизу)
-    for (let s = -1; s <= 1; s += 2) {
-      const legGroup = new THREE.Group();
-      legGroup.position.set(s * 0.15 * scale, 1.15 * scale, 0);
-
-      const thigh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.16 * scale, 0.4 * scale, 0.16 * scale),
-        mBody
-      );
-      thigh.position.y = -0.2 * scale;
-      legGroup.add(thigh);
-
-      const knee = new THREE.Mesh(
-        new THREE.SphereGeometry(0.08 * scale, 8, 8),
-        mDark
-      );
-      knee.position.y = -0.45 * scale;
-      legGroup.add(knee);
-
-      const shin = new THREE.Mesh(
-        new THREE.BoxGeometry(0.14 * scale, 0.4 * scale, 0.14 * scale),
-        mDark
-      );
-      shin.position.y = -0.65 * scale;
-      legGroup.add(shin);
-
-      const foot = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18 * scale, 0.1 * scale, 0.3 * scale),
-        mBody
-      );
-      foot.position.set(0, -0.9 * scale, 0.05 * scale);
-      legGroup.add(foot);
-
-      group.add(legGroup);
-    }
-
-    // КОРОНА БОССА
     if (isBoss) {
       const crown = new THREE.Mesh(
         new THREE.TorusGeometry(0.6 * scale, 0.06, 8, 20),
@@ -2005,43 +911,30 @@ function mainGame() {
     group.userData.ring2 = ring2;
     group.userData.core = core;
     group.userData.aura = aura;
-
     return group;
   }
 
-
-  // ------------------------------------------------------------
-  // СПАВН ОДНОГО ВРАГА
-  // ------------------------------------------------------------
   function spawnEnemy(idx, pos, isBoss) {
     const style = robotStyles[idx % robotStyles.length];
     const mesh = createRobot(style, isBoss);
-
     mesh.position.copy(pos);
     mesh.position.y = 1.5;
     scene.add(mesh);
-
-    const e = {
-      mesh: mesh,
-      style: style,
+    enemies.push({
+      mesh: mesh, style: style,
       hp: style.hp * (isBoss ? 12 : 1),
       maxHp: style.hp * (isBoss ? 12 : 1),
       speed: style.speed * (isBoss ? 0.6 : 1),
       dmg: style.dmg * (isBoss ? 2 : 1),
       attackCD: 0,
-      hover: Math.random() * Math.PI * 2,
       isBoss: !!isBoss,
       bobPhase: Math.random() * Math.PI * 2,
       baseY: 1.5
-    };
-
-    enemies.push(e);
-    return e;
+    });
   }
 
-
   // ============================================================
-  // ЛАЗЕРЫ — ПЛАЗМЕННЫЕ СНАРЯДЫ (как у Злого Морти)
+  // ЛАЗЕРЫ
   // ============================================================
   const lasers = [];
   const particles = [];
@@ -2049,76 +942,46 @@ function mainGame() {
   const powerups = [];
   let mineCooldown = 0;
 
-
-  // ------------------------------------------------------------
-  // ОГОНЬ — ПЛАЗМЕННЫЙ ШАР
-  // ------------------------------------------------------------
   function firePlasma(origin, direction, isMega) {
     isMega = !!isMega;
-
     const group = new THREE.Group();
     group.position.copy(origin);
 
     const coreSize = isMega ? 0.9 : 0.35;
     const glowSize = isMega ? 2.5 : 0.9;
 
-    // ЯДРО (белое или бело-золотое)
-    const coreMat = new THREE.MeshBasicMaterial({
-      color: isMega ? 0xffffff : 0xffffaa
-    });
     const core = new THREE.Mesh(
       new THREE.SphereGeometry(coreSize, 16, 16),
-      coreMat
+      new THREE.MeshBasicMaterial({ color: isMega ? 0xffffff : 0xffffaa })
     );
     group.add(core);
 
-    // ВНУТРЕННИЙ СЛОЙ (золотой, полупрозрачный)
-    const innerMat = new THREE.MeshBasicMaterial({
-      color: isMega ? 0xffdd44 : 0xffaa00,
-      transparent: true, opacity: 0.6
-    });
     const inner = new THREE.Mesh(
       new THREE.SphereGeometry(coreSize * 1.4, 14, 14),
-      innerMat
+      new THREE.MeshBasicMaterial({ color: isMega ? 0xffdd44 : 0xffaa00, transparent: true, opacity: 0.6 })
     );
     group.add(inner);
 
-    // ВНЕШНИЙ ОРЕОЛ
-    const outerMat = new THREE.MeshBasicMaterial({
-      color: isMega ? 0xffaa00 : 0xff8800,
-      transparent: true, opacity: 0.28
-    });
     const outer = new THREE.Mesh(
       new THREE.SphereGeometry(glowSize, 16, 16),
-      outerMat
+      new THREE.MeshBasicMaterial({ color: isMega ? 0xffaa00 : 0xff8800, transparent: true, opacity: 0.28 })
     );
     group.add(outer);
 
-    // ПЛАЗМЕННОЕ КОЛЬЦО поперёк направления
-    const ringGeo = new THREE.TorusGeometry(
-      glowSize * 0.9, glowSize * 0.15, 8, 24
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(glowSize * 0.9, glowSize * 0.15, 8, 24),
+      new THREE.MeshBasicMaterial({ color: isMega ? 0xffdd88 : 0xffcc44, transparent: true, opacity: 0.85 })
     );
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: isMega ? 0xffdd88 : 0xffcc44,
-      transparent: true, opacity: 0.85
-    });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
     group.add(ring);
 
-    // ХВОСТ (конус позади)
-    const tailGeo = new THREE.ConeGeometry(
-      glowSize * 0.8, glowSize * 4, 16, 1, true
+    const tail = new THREE.Mesh(
+      new THREE.ConeGeometry(glowSize * 0.8, glowSize * 4, 16, 1, true),
+      new THREE.MeshBasicMaterial({ color: isMega ? 0xffdd44 : 0xffaa00, transparent: true, opacity: 0.4 })
     );
-    const tailMat = new THREE.MeshBasicMaterial({
-      color: isMega ? 0xffdd44 : 0xffaa00,
-      transparent: true, opacity: 0.4
-    });
-    const tail = new THREE.Mesh(tailGeo, tailMat);
     tail.position.z = -glowSize * 2;
     tail.rotation.x = Math.PI / 2;
     group.add(tail);
 
-    // ТОЧЕЧНЫЙ СВЕТ — освещает окружение
     const light = new THREE.PointLight(
       isMega ? 0xffdd44 : 0xffaa00,
       isMega ? 8 : 3,
@@ -2126,7 +989,6 @@ function mainGame() {
     );
     group.add(light);
 
-    // Ориентируем по направлению
     const q = new THREE.Quaternion().setFromUnitVectors(
       new THREE.Vector3(0, 0, 1),
       direction.clone().normalize()
@@ -2136,18 +998,12 @@ function mainGame() {
     scene.add(group);
 
     lasers.push({
-      group: group,
-      core: core,
-      inner: inner,
-      outer: outer,
-      ring: ring,
-      tail: tail,
-      light: light,
+      group, core, ring, tail,
       dir: direction.clone().normalize(),
       speed: isMega ? 60 : 45,
       life: isMega ? 1.5 : 2.2,
       maxLife: isMega ? 1.5 : 2.2,
-      isMega: isMega,
+      isMega,
       length: isMega ? 100 : 35,
       traveled: 0
     });
@@ -2155,153 +1011,90 @@ function mainGame() {
     isMega ? sfx.mega() : sfx.laser();
   }
 
-
-  // ------------------------------------------------------------
-  // УДАЛЕНИЕ ЛАЗЕРА
-  // ------------------------------------------------------------
   function removeLaser(idx) {
     const L = lasers[idx];
-    if (L.group.position) {
-      for (let i = 0; i < 10; i++) {
-        spawnHitParticles(
-          L.group.position.clone(),
-          L.isMega ? 0xffdd44 : 0xffaa00
-        );
-      }
-    }
     scene.remove(L.group);
     lasers.splice(idx, 1);
   }
 
-
-  // ------------------------------------------------------------
-  // ПРОВЕРКА ПОПАДАНИЙ ЛАЗЕРОВ
-  // ------------------------------------------------------------
   function checkLaserHits() {
     for (let li = lasers.length - 1; li >= 0; li--) {
       const L = lasers[li];
       const pos = L.group.position;
       let hit = false;
-
       for (let ei = enemies.length - 1; ei >= 0; ei--) {
         const e = enemies[ei];
-        const eCenter = e.mesh.position.clone().add(
-          new THREE.Vector3(0, 1.5, 0)
-        );
+        const eCenter = e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
         const dist = pos.distanceTo(eCenter);
         const hitR = (e.isBoss ? 2.0 : 1.2) + (L.isMega ? 2 : 0.3);
-
         if (dist < hitR) {
-          // МЕГА-ЛАЗЕР — ваншот
           damageEnemy(e, L.isMega ? 99999 : 20);
           hit = true;
           if (!L.isMega) break;
         }
       }
-
-      if (hit && !L.isMega) {
-        removeLaser(li);
-      }
+      if (hit && !L.isMega) removeLaser(li);
     }
   }
 
-
-  // ------------------------------------------------------------
-  // УРОН ПО ВРАГУ
-  // ------------------------------------------------------------
   function damageEnemy(e, dmg) {
     e.hp -= dmg;
-    spawnHitParticles(
-      e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
-      e.style.acc
-    );
+    spawnHitParticles(e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), e.style.acc);
     showHitmark();
     sfx.hit();
     if (e.hp <= 0) killEnemy(e);
   }
 
-
-  // ------------------------------------------------------------
-  // УБИЙСТВО ВРАГА
-  // ------------------------------------------------------------
   function killEnemy(e) {
     scene.remove(e.mesh);
     const i = enemies.indexOf(e);
     if (i >= 0) enemies.splice(i, 1);
-
     score += (10 + e.maxHp) * (e.isBoss ? 5 : 1);
     kills++;
     updateHUD();
     addKillFeed(e.style.name + (e.isBoss ? ' [BOSS]' : ''));
     sfx.explode();
-
     const c = e.style.acc;
     const count = e.isBoss ? 80 : 25;
     for (let j = 0; j < count; j++) {
-      spawnHitParticles(
-        e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
-        c
-      );
+      spawnHitParticles(e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), c);
     }
   }
 
-
-  // ------------------------------------------------------------
-  // ЧАСТИЦЫ ПОПАДАНИЯ / ВЗРЫВА
-  // ------------------------------------------------------------
   function spawnHitParticles(pos, color) {
     for (let i = 0; i < 4; i++) {
       const p = new THREE.Mesh(
         new THREE.SphereGeometry(0.08, 4, 4),
-        new THREE.MeshBasicMaterial({ color: color, transparent: true })
+        new THREE.MeshBasicMaterial({ color, transparent: true })
       );
       p.position.copy(pos);
-
       const vel = new THREE.Vector3(
         (Math.random() - 0.5) * 5,
         Math.random() * 3.5,
         (Math.random() - 0.5) * 5
       );
-
       scene.add(p);
-      particles.push({
-        mesh: p, vel: vel, life: 0.7, maxLife: 0.7
-      });
+      particles.push({ mesh: p, vel, life: 0.7, maxLife: 0.7 });
     }
   }
 
-
-  // ------------------------------------------------------------
-  // БОНУСЫ (аптечка / энергия)
-  // ------------------------------------------------------------
   function spawnPowerup(pos, type) {
     const color = type === 'health' ? 0x00ff88 : 0xffaa00;
     const geo = type === 'health'
       ? new THREE.BoxGeometry(0.55, 0.55, 0.55)
       : new THREE.OctahedronGeometry(0.45);
-
-    const p = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: color }));
+    const p = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color }));
     p.position.copy(pos);
     p.position.y = 1.5;
     scene.add(p);
-
     const glow = new THREE.PointLight(color, 3, 8);
     p.add(glow);
-
-    powerups.push({
-      mesh: p, type: type,
-      hover: Math.random() * 6, life: 25
-    });
+    powerups.push({ mesh: p, type, hover: Math.random() * 6, life: 25 });
   }
 
-
-  // ============================================================
-  // МИНЫ
-  // ============================================================
   function placeMine() {
     if (mineCooldown > 0) return;
     mineCooldown = 3;
-
     const m = new THREE.Mesh(
       new THREE.SphereGeometry(0.35, 10, 10),
       new THREE.MeshBasicMaterial({ color: 0xff0000 })
@@ -2309,33 +1102,23 @@ function mainGame() {
     m.position.copy(player.position);
     m.position.y = 0.4;
     scene.add(m);
-
     const light = new THREE.PointLight(0xff0000, 3, 6);
     m.add(light);
-
     mines.push({ mesh: m, life: 18, blink: 0 });
     sfx.mine();
   }
-
 
   function updateMines(dt) {
     for (let i = mines.length - 1; i >= 0; i--) {
       const m = mines[i];
       m.life -= dt;
       m.blink += dt;
-
-      m.mesh.material.color.setHex(
-        Math.sin(m.blink * 12) > 0 ? 0xff0000 : 0x440000
-      );
+      m.mesh.material.color.setHex(Math.sin(m.blink * 12) > 0 ? 0xff0000 : 0x440000);
       m.mesh.scale.setScalar(1 + Math.sin(m.blink * 12) * 0.15);
-
       let exploded = false;
       for (const e of enemies) {
-        const d = e.mesh.position.distanceTo(m.mesh.position);
-        if (d < 3.5) {
-          for (let j = 0; j < 20; j++) {
-            spawnHitParticles(m.mesh.position, 0xff8800);
-          }
+        if (e.mesh.position.distanceTo(m.mesh.position) < 3.5) {
+          for (let j = 0; j < 20; j++) spawnHitParticles(m.mesh.position, 0xff8800);
           for (const e2 of enemies) {
             if (e2.mesh.position.distanceTo(m.mesh.position) < 4.5) {
               damageEnemy(e2, e2.isBoss ? 60 : 120);
@@ -2349,7 +1132,6 @@ function mainGame() {
           break;
         }
       }
-
       if (!exploded && m.life <= 0) {
         scene.remove(m.mesh);
         mines.splice(i, 1);
@@ -2357,9 +1139,8 @@ function mainGame() {
     }
   }
 
-
   // ============================================================
-  // СОСТОЯНИЕ ИГРЫ И HUD
+  // СОСТОЯНИЕ
   // ============================================================
   let hp = 100;
   let energy = 0;
@@ -2383,11 +1164,11 @@ function mainGame() {
   const waveInfoEl = document.getElementById('waveInfo');
   const gameoverEl = document.getElementById('gameover');
   const damageOverlay = document.getElementById('damageOverlay');
+  const crosshairEl = document.getElementById('crosshair');
 
   const killFeed = document.createElement('div');
   killFeed.className = 'killfeed';
   document.body.appendChild(killFeed);
-
 
   function updateHUD() {
     hpFill.style.width = Math.max(0, hp) + '%';
@@ -2395,20 +1176,14 @@ function mainGame() {
     scoreEl.textContent = 'SCORE: ' + score;
     killsEl.textContent = 'KILLS: ' + kills;
     waveEl.textContent = 'WAVE: ' + wave;
-
     if (waveState === 'preparing') {
-      waveInfoEl.innerHTML =
-        'ВОЛНА ' + wave + ' ЧЕРЕЗ<br>' +
-        '<span style="font-size:36px;color:#0ff;">' +
-        Math.ceil(waveTimer) + '</span>';
+      waveInfoEl.innerHTML = 'ВОЛНА ' + wave + ' ЧЕРЕЗ<br><span style="font-size:36px;color:#0ff;">' + Math.ceil(waveTimer) + '</span>';
     } else if (waveState === 'cleared') {
-      waveInfoEl.innerHTML =
-        '<span style="color:#0ff;">ВОЛНА ЗАЧИЩЕНА!</span>';
+      waveInfoEl.innerHTML = '<span style="color:#0ff;">ВОЛНА ЗАЧИЩЕНА!</span>';
     } else {
       waveInfoEl.textContent = 'ВРАГОВ: ' + enemies.length;
     }
   }
-
 
   function addKillFeed(name) {
     const div = document.createElement('div');
@@ -2417,51 +1192,38 @@ function mainGame() {
     setTimeout(function() { div.remove(); }, 3000);
   }
 
-
   function showHitmark() {
     const hm = document.createElement('div');
     hm.className = 'hitmark';
     hm.textContent = '✕';
-    hm.style.left = 'calc(50% + 18px)';
-    hm.style.top = 'calc(50% - 18px)';
+    hm.style.left = (mouseScreenX + 18) + 'px';
+    hm.style.top = (mouseScreenY - 18) + 'px';
     document.body.appendChild(hm);
     setTimeout(function() { hm.remove(); }, 400);
   }
 
-
   function showDamage() {
     damageOverlay.style.opacity = '1';
-    setTimeout(function() {
-      damageOverlay.style.opacity = '0';
-    }, 180);
+    setTimeout(function() { damageOverlay.style.opacity = '0'; }, 180);
   }
-
 
   function flashScreen(color, alpha) {
     const div = document.createElement('div');
     const r = (color >> 16) & 255;
     const g = (color >> 8) & 255;
     const b = color & 255;
-
-    div.style.cssText =
-      'position:fixed;inset:0;' +
-      'background:rgba(' + r + ',' + g + ',' + b + ',' + alpha + ');' +
-      'pointer-events:none;z-index:50;transition:opacity 0.4s;';
-
+    div.style.cssText = 'position:fixed;inset:0;background:rgba(' + r + ',' + g + ',' + b + ',' + alpha + ');pointer-events:none;z-index:50;transition:opacity 0.4s;';
     document.body.appendChild(div);
     setTimeout(function() { div.style.opacity = '0'; }, 30);
     setTimeout(function() { div.remove(); }, 500);
   }
-
 
   function endGame() {
     gameOver = true;
     document.getElementById('finalScore').textContent =
       'SCORE: ' + score + ' | KILLS: ' + kills + ' | WAVE: ' + wave;
     gameoverEl.style.display = 'flex';
-    if (document.exitPointerLock) document.exitPointerLock();
   }
-
 
   // ============================================================
   // МЫШЬ — СТРЕЛЬБА
@@ -2487,78 +1249,74 @@ function mainGame() {
     e.preventDefault();
   });
 
-
-  // ------------------------------------------------------------
-  // НАПРАВЛЕНИЕ ПРИЦЕЛА (из камеры)
-  // ------------------------------------------------------------
+  // ============================================================
+  // НАПРАВЛЕНИЕ СТРЕЛЬБЫ — ОТ ИГРОКА К ПРИЦЕЛУ
+  // ============================================================
   function getAimDirection() {
-    const dir = new THREE.Vector3();
-    camera.getWorldDirection(dir);
-    return dir.normalize();
+    // Нормализованные координаты мыши
+    const nx = (mouseScreenX / innerWidth) * 2 - 1;
+    const ny = -(mouseScreenY / innerHeight) * 2 + 1;
+
+    // Луч из камеры через точку на экране
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera({ x: nx, y: ny }, camera);
+
+    // Точка на расстоянии 100 от камеры
+    const targetPoint = raycaster.ray.at(100, new THREE.Vector3());
+
+    // Направление от игрока к этой точке
+    const origin = player.position.clone();
+    origin.y += 1.5;
+    return targetPoint.sub(origin).normalize();
   }
 
-
-  // ------------------------------------------------------------
-  // ВЫПУСК МЕГА-ЛАЗЕРА
-  // ------------------------------------------------------------
   function releaseMegaLaser() {
     const origin = player.position.clone();
     origin.y += 1.8;
     const dir = getAimDirection();
     origin.add(dir.clone().multiplyScalar(1.2));
-
     firePlasma(origin, dir, true);
-
     player.position.add(dir.clone().multiplyScalar(-2));
-
     flashScreen(0xffdd44, 0.5);
     energy = 0;
     chargeTime = 0;
     updateHUD();
   }
 
-
-  // ------------------------------------------------------------
-  // СПАВН СЛУЧАЙНОГО ВРАГА
-  // ------------------------------------------------------------
   function spawnRandomEnemy() {
     const angle = Math.random() * Math.PI * 2;
     const radius = 30 + Math.random() * 35;
     const x = player.position.x + Math.cos(angle) * radius;
     const z = player.position.z + Math.sin(angle) * radius;
-    spawnEnemy(
-      Math.floor(Math.random() * robotStyles.length),
-      new THREE.Vector3(x, 0, z)
-    );
+    spawnEnemy(Math.floor(Math.random() * robotStyles.length), new THREE.Vector3(x, 0, z));
   }
 
-   // ============================================================
-  // ЧАСТЬ 5 — ИГРОВОЙ ЦИКЛ, АНИМАЦИИ, ВОЛНЫ, ФИНАЛ
   // ============================================================
-
+  // ИГРОВОЙ ЦИКЛ
+  // ============================================================
   const clock = new THREE.Clock();
-  let camPosLerp = new THREE.Vector3(0, 5, 7);
+  let camPosLerp = new THREE.Vector3(0, 5, 8);
   let camLookLerp = new THREE.Vector3(0, 1.5, 0);
   let spawnTimer = 0;
 
   function animate() {
     requestAnimationFrame(animate);
-
-    if (gameOver) {
-      renderer.render(scene, camera);
-      return;
-    }
+    if (gameOver) { renderer.render(scene, camera); return; }
 
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
 
-    // Мерцание городских огней
+    // Мерцание огней
     for (let i = 0; i < cityLights.length; i++) {
       const cl = cityLights[i];
       cl.light.intensity = cl.base + Math.sin(t * 1.5 + cl.phase) * 1.2;
     }
 
-    // ========== ДВИЖЕНИЕ ИГРОКА ==========
+    // Плавное движение камеры к целевым углам
+    yaw += (camTargetYaw - yaw) * 0.15;
+    pitch += (camTargetPitch - pitch) * 0.15;
+
+    // Движение игрока
     const moveDir = new THREE.Vector3();
     if (keys['KeyW'] || keys['ArrowUp'])    moveDir.z -= 1;
     if (keys['KeyS'] || keys['ArrowDown'])  moveDir.z += 1;
@@ -2572,53 +1330,34 @@ function mainGame() {
     if (moveDir.lengthSq() > 0) {
       isMoving = true;
       moveDir.normalize();
-
       const camFwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
       const camRight = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
-
       const worldMove = new THREE.Vector3()
         .addScaledVector(camFwd, -moveDir.z)
         .addScaledVector(camRight, moveDir.x)
         .normalize()
         .multiplyScalar(baseSpeed * dt);
-
       const newPos = player.position.clone().add(worldMove);
-
-      let blocked = false;
-      for (let i = 0; i < buildingColliders.length; i++) {
-        const c = buildingColliders[i];
-        if (Math.abs(newPos.x - c.x) < c.w &&
-            Math.abs(newPos.z - c.z) < c.d) {
-          blocked = true;
-          break;
-        }
+      if (Math.abs(newPos.x) < 115 && Math.abs(newPos.z) < 115) {
+        player.position.copy(newPos);
       }
-      if (Math.abs(newPos.x) > 115 || Math.abs(newPos.z) > 115) {
-        blocked = true;
-      }
-      if (!blocked) player.position.copy(newPos);
     }
 
-    player.rotation.y = yaw;
+    // Тело смотрит туда, куда смотрит камера (спиной к нам)
+    player.rotation.y = yaw + Math.PI;
 
-    // ========== ПРЫЖОК ==========
+    // Прыжок
     if (keys['Space'] && !player.userData.jumpHeld) {
-      if (onGround) {
-        velocityY = 9; onGround = false; jumpCount = 1; sfx.jump();
-      } else if (jumpCount < 2) {
-        velocityY = 8.5; jumpCount = 2; sfx.jump();
-      }
+      if (onGround) { velocityY = 9; onGround = false; jumpCount = 1; sfx.jump(); }
+      else if (jumpCount < 2) { velocityY = 8.5; jumpCount = 2; sfx.jump(); }
       player.userData.jumpHeld = true;
     }
     if (!keys['Space']) player.userData.jumpHeld = false;
-
     velocityY -= 25 * dt;
     player.position.y += velocityY * dt;
-    if (player.position.y <= 0) {
-      player.position.y = 0; velocityY = 0; onGround = true; jumpCount = 0;
-    }
+    if (player.position.y <= 0) { player.position.y = 0; velocityY = 0; onGround = true; jumpCount = 0; }
 
-    // ========== МИНА ==========
+    // Мина
     if (keys['KeyE'] && !player.userData.mineHeld) {
       placeMine();
       player.userData.mineHeld = true;
@@ -2626,7 +1365,7 @@ function mainGame() {
     if (!keys['KeyE']) player.userData.mineHeld = false;
     mineCooldown -= dt;
 
-    // ========== АНИМАЦИЯ R15 ==========
+    // Анимация R15
     const speedFactor = isMoving ? (isRunning ? 1.5 : 1) : 0;
     const walkCycle = Math.sin(t * 10) * speedFactor;
     const walkBob = Math.abs(Math.sin(t * 10)) * 0.06 * speedFactor;
@@ -2638,45 +1377,35 @@ function mainGame() {
 
     armL.group.rotation.x = -walkCycle * 0.5;
     armL.group.rotation.z = 0.15;
-    armL.elbow.rotation.x = -0.3 - Math.abs(walkCycle) * 0.3;
 
-    armR.group.rotation.x = -Math.PI / 2 + 0.15 + Math.sin(t * 2) * 0.03;
+    armR.group.rotation.x = -Math.PI / 2 + 0.15;
     armR.group.rotation.z = -0.1;
-    armR.elbow.rotation.x = -0.15;
 
     lowerTorso.rotation.z = Math.sin(t * 10) * 0.04 * speedFactor;
-    upperTorso.rotation.z = -Math.sin(t * 10) * 0.02 * speedFactor;
     upperTorso.position.y = 0.3 + walkBob;
-
     coreRing.rotation.z += dt * 2;
 
-    if (Math.random() < 0.03) {
-      antTip.material = M_glowP;
-      setTimeout(function() {
-        if (antTip) antTip.material = M_glowO;
-      }, 100);
-    }
-
-    // ========== КАМЕРА ==========
+    // Камера
     const camTargetY = player.position.y + 1.8;
-    const targetPos = new THREE.Vector3(
-      player.position.x, camTargetY, player.position.z
-    );
+    const targetPos = new THREE.Vector3(player.position.x, camTargetY, player.position.z);
     const camOffset = new THREE.Vector3(
       Math.sin(yaw) * Math.cos(pitch) * cameraDistance,
       Math.sin(pitch) * cameraDistance + 1.5,
       Math.cos(yaw) * Math.cos(pitch) * cameraDistance
     );
     const desiredCamPos = targetPos.clone().add(camOffset);
-
     camPosLerp.lerp(desiredCamPos, 0.18);
     camLookLerp.lerp(targetPos, 0.25);
     camera.position.copy(camPosLerp);
     camera.lookAt(camLookLerp);
 
-    // ========== СТРЕЛЬБА ==========
+    // Прицел следует за мышью
+    crosshairEl.style.left = (mouseScreenX - 16) + 'px';
+    crosshairEl.style.top = (mouseScreenY - 16) + 'px';
+
+    // Стрельба
     shootCooldown -= dt;
-    if (mouseDownL && shootCooldown <= 0 && isLocked) {
+    if (mouseDownL && shootCooldown <= 0) {
       const origin = player.position.clone();
       origin.y += 1.6;
       const dir = getAimDirection();
@@ -2685,51 +1414,32 @@ function mainGame() {
       shootCooldown = 0.28;
     }
 
-    // ========== ЗАРЯД МЕГА-ЛАЗЕРА ==========
-    if (mouseDownR && !charging && isLocked) {
-      charging = true;
-      chargeTime = 0;
-    }
+    // Заряд мега-лазера
+    if (mouseDownR && !charging) { charging = true; chargeTime = 0; }
     if (charging) {
       chargeTime += dt;
       energy = Math.min(100, chargeTime * 60);
       updateHUD();
-
-      const gi = Math.min(1, chargeTime / 1.5);
-      if (armL.elbow.children[2]) {
-        armL.elbow.children[2].material.color.setRGB(1, 0.5 * gi + 0.2, 0);
-      }
-      if (armR.elbow.children[2]) {
-        armR.elbow.children[2].material.color.setRGB(1, 0.5 * gi + 0.2, 0);
-      }
     } else {
-      if (energy < 100) {
-        energy = Math.min(100, energy + dt * 8);
-        updateHUD();
-      }
+      if (energy < 100) { energy = Math.min(100, energy + dt * 8); updateHUD(); }
     }
 
-    // ========== ЛАЗЕРЫ ==========
+    // Лазеры
     for (let i = lasers.length - 1; i >= 0; i--) {
       const L = lasers[i];
       L.life -= dt;
       const step = L.speed * dt;
       L.group.position.addScaledVector(L.dir, step);
       L.traveled += step;
-
       const pulse = 1 + Math.sin(t * 20 + i) * 0.1;
       L.core.scale.setScalar(pulse);
       L.ring.rotation.z += dt * 12;
-      L.tail.scale.set(1, 1 + Math.sin(t * 15 + i) * 0.2, 1);
-
-      if (L.life <= 0 || L.traveled > L.length) {
-        removeLaser(i);
-      }
+      if (L.life <= 0 || L.traveled > L.length) removeLaser(i);
     }
 
     checkLaserHits();
 
-    // ========== ВРАГИ ==========
+    // Враги
     for (let i = 0; i < enemies.length; i++) {
       const e = enemies[i];
       const toPlayer = player.position.clone().sub(e.mesh.position);
@@ -2744,15 +1454,6 @@ function mainGame() {
       if (e.mesh.userData.ring2) e.mesh.userData.ring2.rotation.z -= dt * 2;
       if (e.mesh.userData.crown) e.mesh.userData.crown.rotation.z += dt * 2;
 
-      if (e.mesh.userData.core) {
-        const s = 1 + Math.sin(t * 6 + e.bobPhase) * 0.15;
-        e.mesh.userData.core.scale.setScalar(s);
-      }
-      if (e.mesh.userData.aura) {
-        e.mesh.userData.aura.material.opacity =
-          0.15 + Math.sin(t * 4 + e.bobPhase) * 0.08;
-      }
-
       if (dist > 2.2) {
         const speedMul = e.isBoss ? 0.7 : 1;
         e.mesh.position.addScaledVector(toPlayer, e.speed * speedMul * dt);
@@ -2765,8 +1466,6 @@ function mainGame() {
         const swing = Math.sin(t * 8 + e.bobPhase) * 0.6;
         e.mesh.userData.rightArm.rotation.x = -0.5 + swing;
         e.mesh.userData.leftArm.rotation.x = -0.5 - swing;
-        e.mesh.userData.rightArm.rotation.z = 0.4;
-        e.mesh.userData.leftArm.rotation.z = -0.4;
       }
 
       e.attackCD -= dt;
@@ -2777,41 +1476,28 @@ function mainGame() {
         flashScreen(0xff0000, 0.28);
         showDamage();
         sfx.hurt();
-        if (hp <= 0) {
-          hp = 0;
-          updateHUD();
-          endGame();
-        }
+        if (hp <= 0) { hp = 0; updateHUD(); endGame(); }
       }
     }
 
-    // ========== ВОЛНЫ ==========
+    // Волны
     waveTimer -= dt;
-
     if (waveState === 'preparing') {
       updateHUD();
       if (waveTimer <= 0) {
         waveState = 'fighting';
         sfx.waveStart();
-
         const count = 4 + wave * 2;
         for (let i = 0; i < count; i++) {
-          setTimeout(function() {
-            if (!gameOver) spawnRandomEnemy();
-          }, i * 250);
+          setTimeout(function() { if (!gameOver) spawnRandomEnemy(); }, i * 250);
         }
-
         if (wave % 5 === 0) {
           setTimeout(function() {
             if (!gameOver) {
               const angle = Math.random() * Math.PI * 2;
               const x = player.position.x + Math.cos(angle) * 35;
               const z = player.position.z + Math.sin(angle) * 35;
-              spawnEnemy(
-                Math.floor(Math.random() * robotStyles.length),
-                new THREE.Vector3(x, 0, z),
-                true
-              );
+              spawnEnemy(Math.floor(Math.random() * robotStyles.length), new THREE.Vector3(x, 0, z), true);
               sfx.boss();
               flashScreen(0xff00ff, 0.4);
             }
@@ -2827,15 +1513,11 @@ function mainGame() {
       }
       if (Math.random() < 0.005 && enemies.length > 0 && powerups.length < 3) {
         const e = enemies[Math.floor(Math.random() * enemies.length)];
-        spawnPowerup(
-          e.mesh.position.clone(),
-          Math.random() < 0.6 ? 'health' : 'energy'
-        );
+        spawnPowerup(e.mesh.position.clone(), Math.random() < 0.6 ? 'health' : 'energy');
       }
       if (enemies.length === 0 && waveTimer < -2) {
         waveState = 'cleared';
         waveTimer = 3;
-        flashScreen(0x00ffff, 0.2);
       }
     } else if (waveState === 'cleared') {
       updateHUD();
@@ -2848,23 +1530,17 @@ function mainGame() {
       }
     }
 
-    // ========== БОНУСЫ ==========
+    // Бонусы
     for (let i = powerups.length - 1; i >= 0; i--) {
       const p = powerups[i];
       p.hover += dt * 3;
       p.mesh.position.y = 1.5 + Math.sin(p.hover) * 0.35;
       p.mesh.rotation.y += dt * 2;
       p.life -= dt;
-
       const d = player.position.distanceTo(p.mesh.position);
       if (d < 1.6) {
-        if (p.type === 'health') {
-          hp = Math.min(100, hp + 30);
-          flashScreen(0x00ff88, 0.15);
-        } else {
-          energy = Math.min(100, energy + 50);
-          flashScreen(0xffaa00, 0.15);
-        }
+        if (p.type === 'health') { hp = Math.min(100, hp + 30); flashScreen(0x00ff88, 0.15); }
+        else { energy = Math.min(100, energy + 50); flashScreen(0xffaa00, 0.15); }
         updateHUD();
         sfx.pickup();
         scene.remove(p.mesh);
@@ -2875,43 +1551,33 @@ function mainGame() {
       }
     }
 
-    // ========== МИНЫ ==========
     updateMines(dt);
 
-    // ========== ПАРТИКЛЫ ==========
+    // Партиклы
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
       p.life -= dt;
       p.vel.y -= 12 * dt;
       p.mesh.position.addScaledVector(p.vel, dt);
-
-      if (p.mesh.material && p.mesh.material.opacity !== undefined) {
-        p.mesh.material.opacity = p.life / p.maxLife;
-        p.mesh.material.transparent = true;
-      }
-      if (p.life <= 0) {
-        scene.remove(p.mesh);
-        particles.splice(i, 1);
-      }
+      if (p.mesh.material) p.mesh.material.opacity = p.life / p.maxLife;
+      if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
     }
 
     renderer.render(scene, camera);
   }
 
-  // ========== СТАРТ ==========
+  // Старт
   waveState = 'preparing';
   waveTimer = 4;
   updateHUD();
   animate();
 
-  // ========== РЕСАЙЗ ==========
   addEventListener('resize', function() {
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
   });
-
-} // ← ЗАКРЫТИЕ mainGame()
+}
 
 </script>
 </body>

@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>NEON HUNTER v6.0 // Cyberpunk Shooter</title>
+<title>NEON HUNTER v6.1 // Cyberpunk Shooter</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -13,7 +13,6 @@
   }
   canvas { display: block; position: fixed; top: 0; left: 0; }
 
-  /* HUD */
   #hud {
     position: fixed; top: 16px; left: 16px;
     font-size: 15px; letter-spacing: 1px;
@@ -33,7 +32,6 @@
   #score, #kills, #wave { font-size: 16px; font-weight: bold; color: #0ff; }
   #wave { color: #f0f; text-shadow: 0 0 12px #f0f; }
 
-  /* ПРИЦЕЛ — следует за мышью */
   #crosshair {
     position: fixed;
     width: 32px; height: 32px;
@@ -58,7 +56,6 @@
     50%     { transform: scale(1.3); opacity: 0.7; }
   }
 
-  /* Подсказка */
   #info {
     position: fixed; bottom: 16px; left: 50%;
     transform: translateX(-50%);
@@ -70,7 +67,6 @@
     text-align: center; white-space: nowrap;
   }
 
-  /* Инфо о волне */
   #waveInfo {
     position: fixed; top: 16px; right: 16px;
     color: #f0f; font-size: 16px; letter-spacing: 1px;
@@ -81,7 +77,6 @@
     box-shadow: 0 0 20px rgba(255,0,255,0.3);
   }
 
-  /* Меню */
   #menu {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -118,7 +113,6 @@
     transform: scale(1.05);
   }
 
-  /* Загрузка */
   #loading {
     position: fixed; inset: 0;
     display: flex; align-items: center; justify-content: center;
@@ -128,7 +122,6 @@
   #loading .dot { animation: blink 1s infinite; }
   @keyframes blink { 50% { opacity: 0.2; } }
 
-  /* Ошибка */
   #err {
     position: fixed; inset: 0; display: none;
     align-items: center; justify-content: center;
@@ -138,7 +131,6 @@
     font-family: monospace; text-align: left; line-height: 1.6;
   }
 
-  /* Смерть */
   #gameover {
     position: fixed; inset: 0; display: none;
     align-items: center; justify-content: center;
@@ -153,7 +145,6 @@
     letter-spacing: 4px; text-shadow: 0 0 12px #0ff;
   }
 
-  /* Hitmark */
   .hitmark {
     position: fixed; pointer-events: none;
     color: #f00; font-size: 30px; font-weight: bold;
@@ -165,14 +156,12 @@
     100% { opacity: 0; transform: scale(1.8); }
   }
 
-  /* Damage overlay */
   #damageOverlay {
     position: fixed; inset: 0; pointer-events: none; z-index: 15;
     background: radial-gradient(ellipse at center, transparent 35%, rgba(255,0,0,0.7) 100%);
     opacity: 0; transition: opacity 0.18s;
   }
 
-  /* Killfeed */
   .killfeed {
     position: fixed; top: 130px; right: 16px;
     color: #0ff; font-size: 13px; letter-spacing: 1px;
@@ -199,7 +188,7 @@
 
 <div id="menu">
   <h1>NEON HUNTER</h1>
-  <h2>CYBERPUNK SHOOTER v6.0 · R15</h2>
+  <h2>CYBERPUNK SHOOTER v6.1 · R15</h2>
   <button class="btn" id="btnPlay">▶  ИГРАТЬ</button>
   <button class="btn" id="btnHelp">?  УПРАВЛЕНИЕ</button>
 </div>
@@ -214,7 +203,7 @@
 <div id="waveInfo" style="display:none;"></div>
 <div id="crosshair" style="display:none;"><div class="dot"></div></div>
 <div id="info" style="display:none;">
-  WASD — движение | SHIFT — бег | SPACE — прыжок (x2) | ЛКМ — плазма | ПКМ (держать) — МЕГА-ЛАЗЕР | E — мина
+  WASD — движение | SHIFT — бег | SPACE — прыжок (x2) | ЛКМ — плазма | ПКМ (держать 1.2с) — МЕГА-ЛУЧ | E — мина
 </div>
 <div id="gameover">
   СИСТЕМА УНИЧТОЖЕНА
@@ -226,10 +215,9 @@
 <script>
 
 // ============================================================
-// NEON HUNTER v6.0 — ВЕСЬ КОД
+// NEON HUNTER v6.1 — ПОЛНЫЙ КОД
 // ============================================================
 
-// ==== ОШИБКИ ====
 window.addEventListener('error', function(e) {
   const err = document.getElementById('err');
   if (!err) return;
@@ -268,6 +256,7 @@ const sfx = {
   mega:    function() {
     playSound(120, 0.7, 'sawtooth', 0.15);
     playSound(300, 0.6, 'square', 0.1);
+    playSound(600, 0.5, 'sine', 0.06);
   },
   explode: function() { playSound(70, 0.35, 'sawtooth', 0.14); },
   hit:     function() { playSound(1400, 0.04, 'square', 0.04); },
@@ -286,16 +275,13 @@ const sfx = {
   }
 };
 
-// ==== ПРОВЕРКА THREE.JS ====
 window.addEventListener('load', function() {
   setTimeout(function() {
     if (typeof THREE === 'undefined') {
       document.getElementById('loading').style.display = 'none';
       const err = document.getElementById('err');
       err.style.display = 'flex';
-      err.textContent =
-        '❌ Three.js не загрузился.\n\n' +
-        'Открой в Firefox ИЛИ загрузи на GitHub Pages.';
+      err.textContent = '❌ Three.js не загрузился.\n\nОткрой в Firefox ИЛИ загрузи на GitHub Pages.';
       return;
     }
     initMenu();
@@ -315,16 +301,16 @@ function initMenu() {
   });
 
   document.getElementById('btnHelp').addEventListener('click', function() {
-    alert('УПРАВЛЕНИЕ v6.0:\n\n' +
+    alert('УПРАВЛЕНИЕ v6.1:\n\n' +
       '🖱 МЫШЬ — прицел следует за курсором\n' +
       '🖱 КОЛЕСО — зум\n' +
       'ЛКМ — плазменный заряд\n' +
-      'ПКМ (держать 1.2с) — МЕГА-ЛАЗЕР\n' +
+      'ПКМ (держать 1.2с) — МЕГА-ЛУЧ (непрерывный луч из руки!)\n' +
       'WASD — движение\n' +
       'SHIFT — бег\n' +
       'SPACE — двойной прыжок\n' +
       'E — мина\n\n' +
-      'Стрельба летит туда, где прицел.');
+      'МЕГА-ЛУЧ — торчит из руки, жжёт всё на пути, пока не кончится заряд.');
   });
 }
 
@@ -335,9 +321,6 @@ function startGame() {
   mainGame();
 }
 
-// ============================================================
-// ОСНОВНАЯ ИГРА
-// ============================================================
 function mainGame() {
 
   // ==== СЦЕНА / КАМЕРА / РЕНДЕР ====
@@ -408,8 +391,7 @@ function mainGame() {
   grid.material.transparent = true;
   scene.add(grid);
 
-  // ==== 16 НЕОНОВЫХ СТОЛБОВ ПО КРУГУ ====
-  const buildingColliders = [];
+  // ==== СТОЛБЫ ПО КРУГУ ====
   for (let i = 0; i < 16; i++) {
     const angle = (i / 16) * Math.PI * 2;
     const r = 60;
@@ -465,7 +447,6 @@ function mainGame() {
   const root = new THREE.Group();
   player.add(root);
 
-  // Таз
   const lowerTorso = new THREE.Group();
   lowerTorso.position.y = 0.95;
   root.add(lowerTorso);
@@ -482,7 +463,6 @@ function mainGame() {
   beltGlow.position.y = 0.15;
   lowerTorso.add(beltGlow);
 
-  // Грудь
   const upperTorso = new THREE.Group();
   upperTorso.position.y = 0.3;
   lowerTorso.add(upperTorso);
@@ -540,12 +520,10 @@ function mainGame() {
   shGlowR.position.x = 0.5;
   upperTorso.add(shGlowR);
 
-  // Шея
   const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 0.12, 14), M_dark);
   neck.position.y = 0.72;
   upperTorso.add(neck);
 
-  // Голова
   const headGroup = new THREE.Group();
   headGroup.position.y = 0.9;
   upperTorso.add(headGroup);
@@ -587,7 +565,6 @@ function mainGame() {
   mask.position.set(0, -0.14, 0.22);
   headGroup.add(mask);
 
-  // Антенна
   const antBase = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.1, 6), M_dark);
   antBase.position.set(0.16, 0.29, 0);
   headGroup.add(antBase);
@@ -598,7 +575,6 @@ function mainGame() {
   antTip.position.set(0.16, 0.65, 0);
   headGroup.add(antTip);
 
-  // ==== РУКА ====
   function makeArm(side) {
     const shoulder = new THREE.Group();
     shoulder.position.set(side * 0.6, 0.5, 0);
@@ -673,7 +649,6 @@ function mainGame() {
   const armL = makeArm(-1);
   const armR = makeArm(1);
 
-  // ==== НОГА ====
   function makeLeg(side) {
     const hip = new THREE.Group();
     hip.position.set(side * 0.19, 0.82, 0);
@@ -733,15 +708,12 @@ function mainGame() {
   const PITCH_MAX = 1.1;
   let cameraDistance = 8;
 
-  // Позиция мыши
   let mouseScreenX = innerWidth / 2;
   let mouseScreenY = innerHeight / 2;
 
-  // Целевые углы камеры (следуют за мышью)
   let camTargetYaw = 0;
   let camTargetPitch = 0.3;
 
-  // Мышь — без pointer lock
   document.addEventListener('mousemove', function(e) {
     mouseScreenX = e.clientX;
     mouseScreenY = e.clientY;
@@ -749,19 +721,16 @@ function mainGame() {
     const nx = (e.clientX / innerWidth) * 2 - 1;
     const ny = (e.clientY / innerHeight) * 2 - 1;
 
-    // Камера поворачивается в сторону мыши
     camTargetYaw = -nx * 1.3;
     camTargetPitch = 0.3 + ny * 0.7;
     camTargetPitch = Math.max(PITCH_MIN, Math.min(PITCH_MAX, camTargetPitch));
   });
 
-  // Колёсико — зум
   addEventListener('wheel', function(e) {
     cameraDistance += e.deltaY * 0.005;
     cameraDistance = Math.max(3, Math.min(14, cameraDistance));
   }, { passive: true });
 
-  // Клавиатура
   const keys = {};
   addEventListener('keydown', function(e) { keys[e.code] = true; });
   addEventListener('keyup',   function(e) { keys[e.code] = false; });
@@ -830,7 +799,6 @@ function mainGame() {
     ring2.position.y = 1.5 * scale;
     group.add(ring2);
 
-    // Руки с ножами
     for (let s = -1; s <= 1; s += 2) {
       const armG = new THREE.Group();
       armG.position.set(s * 0.35 * scale, 1.5 * scale, 0);
@@ -847,7 +815,6 @@ function mainGame() {
       hand.position.y = -1.0 * scale;
       armG.add(hand);
 
-      // Нож
       const knife = new THREE.Group();
       const hilt = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.22, 0.06), new THREE.MeshStandardMaterial({ color:0x111111, metalness:1, roughness:0.3 }));
       knife.add(hilt);
@@ -934,7 +901,7 @@ function mainGame() {
   }
 
   // ============================================================
-  // ЛАЗЕРЫ
+  // ЛАЗЕРЫ-СНАРЯДЫ (только для ЛКМ)
   // ============================================================
   const lasers = [];
   const particles = [];
@@ -1008,7 +975,7 @@ function mainGame() {
       traveled: 0
     });
 
-    isMega ? sfx.mega() : sfx.laser();
+    sfx.laser();
   }
 
   function removeLaser(idx) {
@@ -1026,21 +993,172 @@ function mainGame() {
         const e = enemies[ei];
         const eCenter = e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
         const dist = pos.distanceTo(eCenter);
-        const hitR = (e.isBoss ? 2.0 : 1.2) + (L.isMega ? 2 : 0.3);
+        const hitR = (e.isBoss ? 2.0 : 1.2) + 0.3;
         if (dist < hitR) {
-          damageEnemy(e, L.isMega ? 99999 : 20);
+          damageEnemy(e, 20);
           hit = true;
-          if (!L.isMega) break;
+          break;
         }
       }
-      if (hit && !L.isMega) removeLaser(li);
+      if (hit) removeLaser(li);
     }
   }
 
+  // ============================================================
+  // МЕГА-ЛУЧ — НЕПРЕРЫВНЫЙ ЛУЧ ИЗ РУКИ
+  // ============================================================
+  // Луч идёт из руки игрока в направлении прицела, пока горит.
+  // Наносит урон всем, кто пересекает его линию.
+
+  const MEGA_LENGTH = 80;
+  const MEGA_THICK = 0.4;
+  const MEGA_DURATION = 3.0;   // сколько секунд горит луч после зарядки
+  const MEGA_DPS = 800;        // урон в секунду
+
+  let megaBeam = null;
+  let megaBeamLife = 0;
+  let megaBeamActive = false;
+
+  function createMegaBeam() {
+    const group = new THREE.Group();
+
+    // Белое ядро
+    const coreGeo = new THREE.CylinderGeometry(MEGA_THICK * 0.5, MEGA_THICK * 0.5, MEGA_LENGTH, 12);
+    coreGeo.rotateX(Math.PI / 2);
+    coreGeo.translate(0, 0, MEGA_LENGTH / 2);
+    const core = new THREE.Mesh(
+      coreGeo,
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95 })
+    );
+    group.add(core);
+
+    // Золотая середина
+    const midGeo = new THREE.CylinderGeometry(MEGA_THICK * 1.1, MEGA_THICK * 1.1, MEGA_LENGTH, 12);
+    midGeo.rotateX(Math.PI / 2);
+    midGeo.translate(0, 0, MEGA_LENGTH / 2);
+    const mid = new THREE.Mesh(
+      midGeo,
+      new THREE.MeshBasicMaterial({ color: 0xffdd44, transparent: true, opacity: 0.55 })
+    );
+    group.add(mid);
+
+    // Оранжевый ореол
+    const outerGeo = new THREE.CylinderGeometry(MEGA_THICK * 2.2, MEGA_THICK * 2.2, MEGA_LENGTH, 14);
+    outerGeo.rotateX(Math.PI / 2);
+    outerGeo.translate(0, 0, MEGA_LENGTH / 2);
+    const outer = new THREE.Mesh(
+      outerGeo,
+      new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.25 })
+    );
+    group.add(outer);
+
+    // Вспышка в конце
+    const tip = new THREE.Mesh(
+      new THREE.SphereGeometry(MEGA_THICK * 2, 16, 16),
+      new THREE.MeshBasicMaterial({ color: 0xffffaa, transparent: true, opacity: 0.9 })
+    );
+    tip.position.z = MEGA_LENGTH;
+    group.add(tip);
+
+    // Точечный свет
+    const light = new THREE.PointLight(0xffdd44, 6, 40);
+    light.position.z = MEGA_LENGTH * 0.5;
+    group.add(light);
+
+    scene.add(group);
+
+    return { group, core, mid, outer, tip, light };
+  }
+
+  function startMegaBeam() {
+    if (megaBeamActive) return;
+    megaBeamActive = true;
+    megaBeamLife = MEGA_DURATION;
+    megaBeam = createMegaBeam();
+    flashScreen(0xffdd44, 0.5);
+    sfx.mega();
+  }
+
+  function stopMegaBeam() {
+    megaBeamActive = false;
+  }
+
+  function updateMegaBeam(dt, t) {
+    if (!megaBeam) return;
+
+    if (!megaBeamActive) {
+      megaBeamLife -= dt * 3;
+      if (megaBeamLife <= 0) {
+        scene.remove(megaBeam.group);
+        megaBeam = null;
+        return;
+      }
+    }
+
+    // Позиция дула на правой руке
+    const muzzleLocal = new THREE.Vector3(0, -0.28, 0.4);
+    const muzzleWorld = muzzleLocal.clone();
+    armR.elbow.localToWorld(muzzleWorld);
+    megaBeam.group.position.copy(muzzleWorld);
+
+    // Направление — в прицел
+    const aimDir = getAimDirection();
+    const q = new THREE.Quaternion().setFromUnitVectors(
+      new THREE.Vector3(0, 0, 1),
+      aimDir
+    );
+    megaBeam.group.quaternion.copy(q);
+
+    // Пульсация / затухание
+    const pulse = 1 + Math.sin(t * 30) * 0.15;
+    const fade = megaBeamActive ? 1 : Math.max(0, megaBeamLife / MEGA_DURATION);
+
+    megaBeam.core.scale.set(pulse, pulse, 1);
+    megaBeam.core.material.opacity = 0.95 * fade;
+
+    megaBeam.mid.scale.set(pulse * 1.05, pulse * 1.05, 1);
+    megaBeam.mid.material.opacity = 0.55 * fade;
+
+    megaBeam.outer.scale.set(pulse * 1.1, pulse * 1.1, 1);
+    megaBeam.outer.material.opacity = 0.25 * fade;
+
+    megaBeam.tip.scale.setScalar(1 + Math.sin(t * 20) * 0.2);
+    megaBeam.tip.material.opacity = 0.9 * fade;
+
+    megaBeam.light.intensity = 6 * fade;
+
+    // Урон по врагам, попавшим в луч
+    if (megaBeamActive) {
+      const startPoint = megaBeam.group.position.clone();
+      for (let ei = enemies.length - 1; ei >= 0; ei--) {
+        const e = enemies[ei];
+        const eCenter = e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+
+        const toE = eCenter.clone().sub(startPoint);
+        const projLen = toE.dot(aimDir);
+
+        if (projLen < 0 || projLen > MEGA_LENGTH) continue;
+
+        const closest = startPoint.clone().add(aimDir.clone().multiplyScalar(projLen));
+        const perpDist = closest.distanceTo(eCenter);
+        const hitRadius = (e.isBoss ? 2.0 : 1.5) + MEGA_THICK * 2;
+
+        if (perpDist < hitRadius) {
+          damageEnemy(e, MEGA_DPS * dt);
+        }
+      }
+    }
+  }
+
+  // ============================================================
+  // УРОН / СМЕРТЬ / ЧАСТИЦЫ
+  // ============================================================
   function damageEnemy(e, dmg) {
     e.hp -= dmg;
-    spawnHitParticles(e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), e.style.acc);
-    showHitmark();
+    if (Math.random() < 0.3) {
+      spawnHitParticles(e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), e.style.acc);
+      showHitmark();
+    }
     sfx.hit();
     if (e.hp <= 0) killEnemy(e);
   }
@@ -1054,10 +1172,9 @@ function mainGame() {
     updateHUD();
     addKillFeed(e.style.name + (e.isBoss ? ' [BOSS]' : ''));
     sfx.explode();
-    const c = e.style.acc;
     const count = e.isBoss ? 80 : 25;
     for (let j = 0; j < count; j++) {
-      spawnHitParticles(e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), c);
+      spawnHitParticles(e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), e.style.acc);
     }
   }
 
@@ -1226,7 +1343,7 @@ function mainGame() {
   }
 
   // ============================================================
-  // МЫШЬ — СТРЕЛЬБА
+  // МЫШЬ
   // ============================================================
   let mouseDownL = false;
   let mouseDownR = false;
@@ -1238,11 +1355,7 @@ function mainGame() {
 
   renderer.domElement.addEventListener('mouseup', function(e) {
     if (e.button === 0) mouseDownL = false;
-    if (e.button === 2) {
-      if (charging && chargeTime > 1.2) releaseMegaLaser();
-      mouseDownR = false;
-      charging = false;
-    }
+    if (e.button === 2) mouseDownR = false;
   });
 
   renderer.domElement.addEventListener('contextmenu', function(e) {
@@ -1250,37 +1363,17 @@ function mainGame() {
   });
 
   // ============================================================
-  // НАПРАВЛЕНИЕ СТРЕЛЬБЫ — ОТ ИГРОКА К ПРИЦЕЛУ
+  // НАПРАВЛЕНИЕ СТРЕЛЬБЫ
   // ============================================================
   function getAimDirection() {
-    // Нормализованные координаты мыши
     const nx = (mouseScreenX / innerWidth) * 2 - 1;
     const ny = -(mouseScreenY / innerHeight) * 2 + 1;
-
-    // Луч из камеры через точку на экране
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera({ x: nx, y: ny }, camera);
-
-    // Точка на расстоянии 100 от камеры
     const targetPoint = raycaster.ray.at(100, new THREE.Vector3());
-
-    // Направление от игрока к этой точке
     const origin = player.position.clone();
     origin.y += 1.5;
     return targetPoint.sub(origin).normalize();
-  }
-
-  function releaseMegaLaser() {
-    const origin = player.position.clone();
-    origin.y += 1.8;
-    const dir = getAimDirection();
-    origin.add(dir.clone().multiplyScalar(1.2));
-    firePlasma(origin, dir, true);
-    player.position.add(dir.clone().multiplyScalar(-2));
-    flashScreen(0xffdd44, 0.5);
-    energy = 0;
-    chargeTime = 0;
-    updateHUD();
   }
 
   function spawnRandomEnemy() {
@@ -1306,17 +1399,15 @@ function mainGame() {
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
 
-    // Мерцание огней
     for (let i = 0; i < cityLights.length; i++) {
       const cl = cityLights[i];
       cl.light.intensity = cl.base + Math.sin(t * 1.5 + cl.phase) * 1.2;
     }
 
-    // Плавное движение камеры к целевым углам
     yaw += (camTargetYaw - yaw) * 0.15;
     pitch += (camTargetPitch - pitch) * 0.15;
 
-    // Движение игрока
+    // Движение
     const moveDir = new THREE.Vector3();
     if (keys['KeyW'] || keys['ArrowUp'])    moveDir.z -= 1;
     if (keys['KeyS'] || keys['ArrowDown'])  moveDir.z += 1;
@@ -1343,7 +1434,6 @@ function mainGame() {
       }
     }
 
-    // Тело смотрит туда, куда смотрит камера (спиной к нам)
     player.rotation.y = yaw + Math.PI;
 
     // Прыжок
@@ -1378,6 +1468,7 @@ function mainGame() {
     armL.group.rotation.x = -walkCycle * 0.5;
     armL.group.rotation.z = 0.15;
 
+    // Правая рука — вытянута вперёд (для стрельбы)
     armR.group.rotation.x = -Math.PI / 2 + 0.15;
     armR.group.rotation.z = -0.1;
 
@@ -1399,11 +1490,11 @@ function mainGame() {
     camera.position.copy(camPosLerp);
     camera.lookAt(camLookLerp);
 
-    // Прицел следует за мышью
+    // Прицел за мышью
     crosshairEl.style.left = (mouseScreenX - 16) + 'px';
     crosshairEl.style.top = (mouseScreenY - 16) + 'px';
 
-    // Стрельба
+    // ЛКМ — обычная плазма
     shootCooldown -= dt;
     if (mouseDownL && shootCooldown <= 0) {
       const origin = player.position.clone();
@@ -1414,17 +1505,51 @@ function mainGame() {
       shootCooldown = 0.28;
     }
 
-    // Заряд мега-лазера
-    if (mouseDownR && !charging) { charging = true; chargeTime = 0; }
-    if (charging) {
-      chargeTime += dt;
-      energy = Math.min(100, chargeTime * 60);
-      updateHUD();
+    // ============ ПКМ — ЗАРЯД И МЕГА-ЛУЧ ============
+    if (mouseDownR) {
+      if (!charging && !megaBeamActive) {
+        charging = true;
+        chargeTime = 0;
+      }
+      if (charging) {
+        chargeTime += dt;
+        energy = Math.min(100, chargeTime * 60);
+        updateHUD();
+
+        const gi = Math.min(1, chargeTime / 1.2);
+        if (armL.elbow.children[2]) {
+          armL.elbow.children[2].material.color.setRGB(1, 0.5 * gi + 0.2, 0);
+        }
+        if (armR.elbow.children[2]) {
+          armR.elbow.children[2].material.color.setRGB(1, 0.5 * gi + 0.2, 0);
+        }
+
+        // Заряд дошёл → запускаем луч
+        if (chargeTime >= 1.2 && !megaBeamActive) {
+          startMegaBeam();
+          charging = false;
+          chargeTime = 0;
+        }
+      }
     } else {
-      if (energy < 100) { energy = Math.min(100, energy + dt * 8); updateHUD(); }
+      // ПКМ отпущена
+      if (charging) {
+        charging = false;
+        chargeTime = 0;
+      }
+      if (megaBeamActive) {
+        stopMegaBeam();
+      }
+      if (!megaBeamActive && energy < 100) {
+        energy = Math.min(100, energy + dt * 8);
+        updateHUD();
+      }
     }
 
-    // Лазеры
+    // Обновление луча
+    updateMegaBeam(dt, t);
+
+    // Снаряды-лазеры
     for (let i = lasers.length - 1; i >= 0; i--) {
       const L = lasers[i];
       L.life -= dt;
@@ -1566,7 +1691,6 @@ function mainGame() {
     renderer.render(scene, camera);
   }
 
-  // Старт
   waveState = 'preparing';
   waveTimer = 4;
   updateHUD();

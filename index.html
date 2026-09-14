@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>NEON HUNTER v6.4 // Cyberpunk Shooter</title>
+<title>NEON HUNTER v7.0 // Cyberpunk Shooter</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -32,7 +32,6 @@
   #score, #kills, #wave { font-size: 16px; font-weight: bold; color: #0ff; }
   #wave { color: #f0f; text-shadow: 0 0 12px #f0f; }
 
-  /* ПРИЦЕЛ — СЛЕДУЕТ ЗА МЫШЬЮ */
   #crosshair {
     position: fixed;
     width: 32px; height: 32px;
@@ -179,6 +178,131 @@
     from { transform: translateX(40px); opacity: 0; }
     to   { transform: translateX(0); opacity: 1; }
   }
+
+  #xpBarContainer {
+    position: fixed; bottom: 50px; left: 50%;
+    transform: translateX(-50%);
+    width: 400px; height: 8px;
+    border: 1px solid #0ff; background: rgba(0,0,0,0.7);
+    z-index: 10; pointer-events: none;
+    display: none;
+  }
+  #xpFill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #ff0, #0ff, #f0f);
+    box-shadow: 0 0 12px #0ff;
+    transition: width 0.2s;
+  }
+  #levelText {
+    position: fixed; bottom: 62px; left: 50%;
+    transform: translateX(-50%);
+    color: #ff0; font-size: 13px; letter-spacing: 2px;
+    text-shadow: 0 0 8px #ff0;
+    z-index: 10; pointer-events: none; display: none;
+  }
+
+  #weaponInfo {
+    position: fixed; bottom: 90px; left: 50%;
+    transform: translateX(-50%);
+    color: #0ff; font-size: 14px; letter-spacing: 2px;
+    text-shadow: 0 0 10px #0ff;
+    z-index: 10; pointer-events: none;
+    background: rgba(0,0,0,0.6);
+    padding: 6px 16px; border: 1px solid #0ff;
+    border-radius: 4px;
+    display: none;
+  }
+
+  #abilities {
+    position: fixed; bottom: 16px; left: 16px;
+    z-index: 10; pointer-events: none;
+    display: none;
+  }
+  .ability {
+    display: inline-block; margin-right: 8px;
+    padding: 6px 12px;
+    border: 1px solid #0ff; border-radius: 4px;
+    background: rgba(0,0,0,0.6);
+    color: #0ff; font-size: 12px;
+    text-shadow: 0 0 6px #0ff;
+  }
+  .ability.cooldown {
+    color: #555; border-color: #555;
+    text-shadow: none;
+  }
+
+  #shop {
+    position: fixed; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    flex-direction: column;
+    background: rgba(0,0,0,0.92);
+    z-index: 300;
+  }
+  #shop h2 {
+    color: #ff0; font-size: 44px; letter-spacing: 8px;
+    text-shadow: 0 0 20px #ff0;
+    margin-bottom: 30px;
+  }
+  #shop .coins {
+    color: #0ff; font-size: 22px; margin-bottom: 30px;
+    text-shadow: 0 0 10px #0ff; letter-spacing: 3px;
+  }
+  #shopGrid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 16px; max-width: 900px; margin-bottom: 30px;
+  }
+  .shopItem {
+    padding: 18px 24px;
+    border: 2px solid #0ff; border-radius: 6px;
+    background: rgba(0,20,40,0.7);
+    color: #0ff; cursor: pointer;
+    text-align: center; transition: all 0.25s;
+    font-family: inherit;
+  }
+  .shopItem:hover {
+    background: rgba(0,255,255,0.15);
+    box-shadow: 0 0 20px #0ff;
+    transform: scale(1.05);
+  }
+  .shopItem.disabled {
+    opacity: 0.4; cursor: not-allowed;
+    border-color: #555; color: #555;
+  }
+  .shopItem.disabled:hover {
+    background: rgba(0,20,40,0.7);
+    box-shadow: none; transform: none;
+  }
+  .shopItem .name {
+    font-size: 18px; font-weight: bold;
+    letter-spacing: 2px; margin-bottom: 6px;
+  }
+  .shopItem .desc {
+    font-size: 12px; opacity: 0.8;
+    margin-bottom: 8px; letter-spacing: 1px;
+  }
+  .shopItem .cost {
+    font-size: 16px; color: #ff0;
+    text-shadow: 0 0 8px #ff0;
+  }
+  .shopItem .lvl {
+    font-size: 11px; opacity: 0.6;
+    margin-top: 6px; letter-spacing: 1px;
+  }
+
+  .bossPhase {
+    position: fixed; top: 100px; left: 50%;
+    transform: translateX(-50%);
+    color: #f00; font-size: 32px;
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px #f00, 0 0 40px #f00;
+    z-index: 30; pointer-events: none;
+    animation: bossPhaseAnim 2s forwards;
+  }
+  @keyframes bossPhaseAnim {
+    0%   { opacity: 0; transform: translateX(-50%) scale(0.5); }
+    30%  { opacity: 1; transform: translateX(-50%) scale(1.2); }
+    100% { opacity: 0; transform: translateX(-50%) scale(1); }
+  }
 </style>
 </head>
 <body>
@@ -189,7 +313,7 @@
 
 <div id="menu">
   <h1>NEON HUNTER</h1>
-  <h2>CYBERPUNK SHOOTER v6.4 · R15</h2>
+  <h2>CYBERPUNK SHOOTER v7.0 · R15</h2>
   <button class="btn" id="btnPlay">▶  ИГРАТЬ</button>
   <button class="btn" id="btnHelp">?  УПРАВЛЕНИЕ</button>
 </div>
@@ -202,9 +326,23 @@
   <div id="wave">WAVE: 1</div>
 </div>
 <div id="waveInfo" style="display:none;"></div>
+<div id="xpBarContainer"><div id="xpFill"></div></div>
+<div id="levelText" style="display:none;">LVL 1</div>
+<div id="weaponInfo" style="display:none;">🔫 Плазма</div>
+<div id="abilities" style="display:none;">
+  <div class="ability" id="abDash">⚡ SHIFT+W</div>
+  <div class="ability" id="abShield">🛡 Q</div>
+  <div class="ability" id="abTeleport">✨ F</div>
+</div>
 <div id="crosshair" style="display:none;"><div class="dot"></div></div>
 <div id="info" style="display:none;">
-  WASD — движение | SHIFT — бег | SPACE — прыжок | ЛКМ — плазма | ПКМ (держать) — поворот камеры | R (держать 1.2с) — МЕГА-ЛУЧ | E — мина
+  WASD — движение | SHIFT+W — рывок | Q — щит | F — телепорт | ЛКМ — стрельба | ПКМ (держать) — камера | R — МЕГА-ЛУЧ | 1-5 — оружие | E — мина
+</div>
+<div id="shop">
+  <h2>МАГАЗИН</h2>
+  <div class="coins" id="shopCoins">💰 Кредиты: 0</div>
+  <div id="shopGrid"></div>
+  <button class="btn" id="shopContinue" style="min-width: 200px;">ПРОДОЛЖИТЬ ▶</button>
 </div>
 <div id="gameover">
   СИСТЕМА УНИЧТОЖЕНА
@@ -216,9 +354,7 @@
 <script>
 
 // ============================================================
-// NEON HUNTER v6.4
-// Прицел за мышью. ПКМ (держать) — поворот камеры.
-// R (держать 1.2с) — мега-луч (толстый). Луч убивает всех.
+// NEON HUNTER v7.0
 // ============================================================
 
 window.addEventListener('error', function(e) {
@@ -265,6 +401,10 @@ function playSound(freq, dur, type, vol, tag) {
 
 const sfx = {
   laser:   function() { playSound(880, 0.08, 'sawtooth', 0.06, 'laser'); },
+  shotgun: function() { playSound(300, 0.2, 'square', 0.1, 'shotgun'); },
+  sniper:  function() { playSound(1500, 0.15, 'sawtooth', 0.12, 'sniper'); },
+  rocket:  function() { playSound(200, 0.3, 'square', 0.1, 'rocket'); },
+  rifle:   function() { playSound(700, 0.05, 'square', 0.04, 'rifle'); },
   mega:    function() {
     playSound(120, 0.7, 'sawtooth', 0.15, 'mega1');
     playSound(300, 0.6, 'square', 0.1, 'mega2');
@@ -275,6 +415,15 @@ const sfx = {
   pickup:  function() { playSound(1600, 0.15, 'sine', 0.09, 'pickup'); },
   jump:    function() { playSound(600, 0.1, 'sine', 0.05, 'jump'); },
   mine:    function() { playSound(300, 0.12, 'square', 0.05, 'mine'); },
+  dash:    function() { playSound(400, 0.15, 'sine', 0.08, 'dash'); },
+  shield:  function() { playSound(900, 0.3, 'sine', 0.08, 'shield'); },
+  teleport:function() { playSound(1800, 0.2, 'sine', 0.1, 'tp'); },
+  levelup: function() {
+    playSound(660, 0.2, 'square', 0.12, 'lvl1');
+    setTimeout(function(){ playSound(880, 0.2, 'square', 0.12, 'lvl2'); }, 100);
+    setTimeout(function(){ playSound(1320, 0.3, 'square', 0.14, 'lvl3'); }, 200);
+  },
+  buy:     function() { playSound(1200, 0.1, 'sine', 0.1, 'buy'); },
   waveStart: function() {
     playSound(220, 0.4, 'sawtooth', 0.1, 'ws1');
     setTimeout(function(){ playSound(440, 0.4, 'sawtooth', 0.1, 'ws2'); }, 200);
@@ -310,23 +459,32 @@ function initMenu() {
     document.getElementById('crosshair').style.display = 'block';
     document.getElementById('info').style.display = 'block';
     document.getElementById('waveInfo').style.display = 'block';
+    document.getElementById('xpBarContainer').style.display = 'block';
+    document.getElementById('levelText').style.display = 'block';
+    document.getElementById('weaponInfo').style.display = 'block';
+    document.getElementById('abilities').style.display = 'block';
     initAudio();
     startGame();
   });
 
   document.getElementById('btnHelp').addEventListener('click', function() {
-    alert('УПРАВЛЕНИЕ v6.4:\n\n' +
-      '🖱 МЫШЬ — прицел следует за курсором\n' +
-      '🖱 ПКМ (держать) — поворот камеры (курсор скрывается)\n' +
-      '🖱 ПКМ (отпустить) — курсор снова виден\n' +
-      '🖱 КОЛЕСО — зум\n' +
-      'ЛКМ — плазменный заряд (в точку прицела)\n' +
+    alert('УПРАВЛЕНИЕ v7.0:\n\n' +
+      '🖱 МЫШЬ — прицел за курсором\n' +
+      '🖱 ПКМ (держать) — поворот камеры\n' +
+      'ЛКМ — стрельба\n' +
+      '1-5 — оружие:\n' +
+      '  1. Плазма\n' +
+      '  2. Дробовик (7 шаров)\n' +
+      '  3. Снайперка\n' +
+      '  4. Ракетница\n' +
+      '  5. Автомат\n' +
       'R (держать 1.2с) — МЕГА-ЛУЧ\n' +
-      'WASD — движение\n' +
-      'SHIFT — бег\n' +
-      'SPACE — двойной прыжок\n' +
-      'E — мина\n\n' +
-      'МЕГА-ЛУЧ жжёт ВСЕХ врагов на своём пути!');
+      'SHIFT+W — рывок\n' +
+      'Q — щит (защита)\n' +
+      'F — телепорт (10 метров)\n' +
+      'E — мина\n' +
+      'SPACE — прыжок\n\n' +
+      'Между волнами — МАГАЗИН.');
   });
 }
 
@@ -410,7 +568,8 @@ function mainGame() {
   grid.material.transparent = true;
   scene.add(grid);
 
-  // ============ СТОЛБЫ ============
+  // ============ СТОЛБЫ (укрытия) ============
+  const coverPillars = [];
   for (let i = 0; i < 16; i++) {
     const angle = (i / 16) * Math.PI * 2;
     const r = 60;
@@ -438,6 +597,8 @@ function mainGame() {
     );
     topLight.position.set(x, 12.5, z);
     scene.add(topLight);
+
+    coverPillars.push({ x: x, z: z, r: 0.8 });
   }
 
   // ============================================================
@@ -702,10 +863,22 @@ function mainGame() {
   const legL = makeLeg(-1);
   const legR = makeLeg(1);
 
+  // Сфера щита вокруг игрока
+  const shieldMesh = new THREE.Mesh(
+    new THREE.SphereGeometry(1.6, 16, 16),
+    new THREE.MeshBasicMaterial({
+      color: 0x00aaff, transparent: true, opacity: 0.25,
+      side: THREE.DoubleSide
+    })
+  );
+  shieldMesh.position.y = 1.2;
+  shieldMesh.visible = false;
+  player.add(shieldMesh);
+
   scene.add(player);
 
   // ============================================================
-  // КАМЕРА И МЫШЬ — ГИБРИДНЫЙ РЕЖИМ (как Shift в Roblox)
+  // КАМЕРА И МЫШЬ
   // ============================================================
   let yaw = 0;
   let pitch = 0.3;
@@ -713,19 +886,15 @@ function mainGame() {
   const PITCH_MAX = 1.1;
   let cameraDistance = 8;
 
-  // Позиция мыши на экране (для прицела)
   let mouseScreenX = innerWidth / 2;
   let mouseScreenY = innerHeight / 2;
 
-  // Зажата ли ПКМ — режим поворота камеры
   let cameraLocked = false;
 
-  // Движение мыши
   document.addEventListener('mousemove', function(e) {
     mouseScreenX = e.clientX;
     mouseScreenY = e.clientY;
 
-    // Если зажата ПКМ — двигаем камеру
     if (cameraLocked) {
       const sens = 0.005;
       yaw -= e.movementX * sens;
@@ -743,7 +912,9 @@ function mainGame() {
   addEventListener('keydown', function(e) { keys[e.code] = true; });
   addEventListener('keyup',   function(e) { keys[e.code] = false; });
 
-  // ============ ВРАГИ ============
+  // ============================================================
+  // ВРАГИ
+  // ============================================================
   const enemies = [];
 
   const robotStyles = [
@@ -756,7 +927,6 @@ function mainGame() {
     { name:'Reaper',    color:0xff2200, hp:60,  speed:2.3, dmg:15, acc:0xff6644 },
     { name:'Phantom',   color:0x8800ff, hp:40,  speed:3.1, dmg:9,  acc:0xbb88ff },
     { name:'Titan',     color:0xffaa00, hp:110, speed:1.3, dmg:18, acc:0xffcc66 },
-    { name:'Spider',    color:0x00ff44, hp:30,  speed:3.0, dmg:7,  acc:0x88ffaa },
     { name:'Crusher',   color:0xff0066, hp:95,  speed:1.5, dmg:20, acc:0xff44aa },
     { name:'Wasp',      color:0xffee00, hp:20,  speed:3.7, dmg:5,  acc:0xffff88 },
     { name:'Golem',     color:0x884400, hp:130, speed:1.1, dmg:22, acc:0xcc8844 },
@@ -767,6 +937,15 @@ function mainGame() {
     { name:'Destroyer', color:0xff3300, hp:100, speed:1.4, dmg:19, acc:0xff7744 },
     { name:'Nano',      color:0xffffff, hp:22,  speed:3.6, dmg:6,  acc:0xcccccc },
     { name:'Overlord',  color:0xff00aa, hp:160, speed:1.0, dmg:25, acc:0xff66dd },
+    // ============ НОВЫЕ ТИПЫ ============
+    { name:'Kamikaze',  color:0xff4400, hp:15,  speed:5.0, dmg:35, acc:0xffaa00, behavior:'kamikaze' },
+    { name:'Sniper',    color:0xffff00, hp:40,  speed:0.5, dmg:25, acc:0xffff88, behavior:'sniper' },
+    { name:'Healer',    color:0x00ff00, hp:50,  speed:1.8, dmg:5,  acc:0x88ff88, behavior:'healer' },
+    { name:'Shielder',  color:0x00aaff, hp:80,  speed:1.5, dmg:12, acc:0x88ccff, behavior:'shielder' },
+    { name:'Spider',    color:0xff00aa, hp:30,  speed:4.0, dmg:10, acc:0xff88dd, behavior:'spider' },
+    { name:'Tank',      color:0x884400, hp:300, speed:0.8, dmg:30, acc:0xffaa44, behavior:'tank' },
+    { name:'Ghost',     color:0x8800ff, hp:45,  speed:3.0, dmg:15, acc:0xcc88ff, behavior:'ghost' },
+    { name:'Commander', color:0xffcc00, hp:120, speed:1.5, dmg:15, acc:0xffff66, behavior:'commander' },
   ];
 
   function createRobot(style, isBoss) {
@@ -892,42 +1071,171 @@ function mainGame() {
     mesh.position.copy(pos);
     mesh.position.y = 1.5;
     scene.add(mesh);
-    enemies.push({
+
+    const behavior = style.behavior || 'melee';
+
+    let shieldMesh2 = null;
+    if (behavior === 'shielder') {
+      shieldMesh2 = new THREE.Mesh(
+        new THREE.SphereGeometry(1.2, 12, 12),
+        new THREE.MeshBasicMaterial({
+          color: 0x00aaff, transparent: true, opacity: 0.35
+        })
+      );
+      shieldMesh2.position.y = 1.5;
+      mesh.add(shieldMesh2);
+    }
+
+    const e = {
       mesh: mesh, style: style,
       hp: style.hp * (isBoss ? 12 : 1),
       maxHp: style.hp * (isBoss ? 12 : 1),
       speed: style.speed * (isBoss ? 0.6 : 1),
       dmg: style.dmg * (isBoss ? 2 : 1),
       attackCD: 0,
+      shootCD: 0,
       isBoss: !!isBoss,
+      behavior: behavior,
       bobPhase: Math.random() * Math.PI * 2,
-      baseY: 1.5
-    });
+      baseY: 1.5,
+      shieldHp: behavior === 'shielder' ? 200 : 0,
+      shieldMesh: shieldMesh2,
+      fear: false,
+      ghostPhase: Math.random() * Math.PI * 2,
+      isGhost: behavior === 'ghost',
+      commanderBuff: 0,
+      healCD: 0,
+      // Для боссов — фазы
+      bossPhase: isBoss ? 1 : 0,
+      bossPhaseTimer: 0
+    };
+    enemies.push(e);
+    return e;
   }
 
-  // ============ ЛАЗЕРЫ-СНАРЯДЫ (ЛКМ) ============
+  // ============================================================
+  // СИСТЕМА XP / УРОВНЕЙ / ОРУЖИЯ / СПОСОБНОСТЕЙ
+  // ============================================================
+  let xp = 0;
+  let xpNext = 100;
+  let level = 1;
+  let credits = 0;
+  let damageMult = 1.0;
+  let speedMult = 1.0;
+  let maxHp = 100;
+
+  // Оружие
+  const WEAPONS = {
+    pistol:  { name:'Плазма',    dmg:20,  cd:0.35, count:1, spread:0,    speed:55, icon:'🔫' },
+    shotgun: { name:'Дробовик',  dmg:15,  cd:0.7,  count:7, spread:0.35, speed:45, icon:'💥' },
+    sniper:  { name:'Снайперка', dmg:120, cd:1.5,  count:1, spread:0,    speed:90, icon:'🎯' },
+    rocket:  { name:'Ракетница', dmg:80,  cd:1.2,  count:1, spread:0,    speed:35, icon:'🚀', isRocket:true },
+    rifle:   { name:'Автомат',   dmg:10,  cd:0.1,  count:1, spread:0.08, speed:70, icon:'⚙' }
+  };
+  const WEAPON_ORDER = ['pistol', 'shotgun', 'sniper', 'rocket', 'rifle'];
+  let currentWeapon = 'pistol';
+
+  // Способности
+  let dashCD = 0;
+  let shieldCD = 0;
+  let shieldActive = 0;
+  let teleportCD = 0;
+
+  // Магазин
+  let shopOpen = false;
+  let shopLevels = { hp:0, dmg:0, spd:0, cd:0, heal:0, shield:0 };
+  let cdMult = 1.0;
+  let shieldDuration = 4;
+
+  // ============================================================
+  // МАГАЗИН
+  // ============================================================
+  const SHOP_ITEMS = [
+    { id:'hp',    name:'+50 МАКС HP',    desc:'Увеличить здоровье', cost:30, maxLvl:5 },
+    { id:'dmg',   name:'+20% УРОН',      desc:'Больше урона',       cost:40, maxLvl:5 },
+    { id:'spd',   name:'+15% СКОРОСТЬ',  desc:'Быстрее двигаешься', cost:35, maxLvl:5 },
+    { id:'cd',    name:'-15% КД',        desc:'Быстрее стреляешь',  cost:45, maxLvl:3 },
+    { id:'heal',  name:'ВОССТАНОВИТЬ HP',desc:'Полный ремонт',      cost:20, maxLvl:99 },
+    { id:'shield',name:'+2 сек. ЩИТ',    desc:'Дольше защита',      cost:50, maxLvl:3 }
+  ];
+
+  function openShop() {
+    shopOpen = true;
+    document.getElementById('shop').style.display = 'flex';
+    document.getElementById('shopCoins').textContent = '💰 Кредиты: ' + credits;
+    document.body.style.cursor = 'default';
+
+    const grid = document.getElementById('shopGrid');
+    grid.innerHTML = '';
+    for (const item of SHOP_ITEMS) {
+      const lvl = shopLevels[item.id];
+      const canBuy = credits >= item.cost && lvl < item.maxLvl;
+      const el = document.createElement('div');
+      el.className = 'shopItem' + (canBuy ? '' : ' disabled');
+      el.innerHTML =
+        '<div class="name">' + item.name + '</div>' +
+        '<div class="desc">' + item.desc + '</div>' +
+        '<div class="cost">💰 ' + item.cost + '</div>' +
+        '<div class="lvl">Ур: ' + lvl + ' / ' + item.maxLvl + '</div>';
+      if (canBuy) {
+        el.addEventListener('click', function() {
+          credits -= item.cost;
+          shopLevels[item.id]++;
+          applyUpgrade(item.id);
+          sfx.buy();
+          openShop();
+        });
+      }
+      grid.appendChild(el);
+    }
+  }
+
+  function applyUpgrade(id) {
+    if (id === 'hp')    { maxHp += 50; hp += 50; }
+    if (id === 'dmg')   { damageMult += 0.2; }
+    if (id === 'spd')   { speedMult += 0.15; }
+    if (id === 'cd')    { cdMult *= 0.85; }
+    if (id === 'heal')  { hp = maxHp; }
+    if (id === 'shield'){ shieldDuration += 2; }
+    updateHUD();
+  }
+
+  document.getElementById('shopContinue').addEventListener('click', function() {
+    document.getElementById('shop').style.display = 'none';
+    document.body.style.cursor = 'crosshair';
+    shopOpen = false;
+  });
+
+  // ============================================================
+  // ЛАЗЕРЫ (оружие)
+  // ============================================================
   const lasers = [];
   const particles = [];
   const mines = [];
   const powerups = [];
   let mineCooldown = 0;
 
-  function firePlasma(origin, direction) {
+  function firePlasma(origin, direction, weapon) {
+    weapon = weapon || WEAPONS[currentWeapon];
     const group = new THREE.Group();
     group.position.copy(origin);
 
-    const coreSize = 0.35;
-    const glowSize = 0.9;
+    const isRocket = weapon.isRocket;
+    const coreSize = isRocket ? 0.5 : 0.35;
+    const glowSize = isRocket ? 1.3 : 0.9;
+
+    const coreColor = isRocket ? 0xff4400 : (currentWeapon === 'sniper' ? 0x00ffff : 0xffffaa);
+    const outerColor = isRocket ? 0xff2200 : 0xff8800;
 
     const core = new THREE.Mesh(
       new THREE.SphereGeometry(coreSize, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0xffffaa })
+      new THREE.MeshBasicMaterial({ color: coreColor })
     );
     group.add(core);
 
     const outer = new THREE.Mesh(
       new THREE.SphereGeometry(glowSize, 12, 12),
-      new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.28 })
+      new THREE.MeshBasicMaterial({ color: outerColor, transparent: true, opacity: 0.28 })
     );
     group.add(outer);
 
@@ -956,14 +1264,21 @@ function mainGame() {
     lasers.push({
       group, core, ring, tail,
       dir: direction.clone().normalize(),
-      speed: 55,
-      life: 1.5,
-      maxLife: 1.5,
-      length: 40,
-      traveled: 0
+      speed: weapon.speed,
+      life: 2.0,
+      maxLife: 2.0,
+      length: isRocket ? 60 : 45,
+      traveled: 0,
+      dmg: weapon.dmg * damageMult,
+      isRocket: isRocket
     });
 
-    sfx.laser();
+    // Звук по типу оружия
+    if (currentWeapon === 'shotgun') sfx.shotgun();
+    else if (currentWeapon === 'sniper') sfx.sniper();
+    else if (currentWeapon === 'rocket') sfx.rocket();
+    else if (currentWeapon === 'rifle') sfx.rifle();
+    else sfx.laser();
   }
 
   function removeLaser(idx) {
@@ -976,6 +1291,31 @@ function mainGame() {
     for (let li = lasers.length - 1; li >= 0; li--) {
       const L = lasers[li];
       const pos = L.group.position;
+
+      if (L.isRocket) {
+        for (let ei = enemies.length - 1; ei >= 0; ei--) {
+          const e = enemies[ei];
+          const eCenter = e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+          if (pos.distanceTo(eCenter) < 2.0) {
+            const r = 6;
+            for (const e2 of enemies) {
+              const d = e2.mesh.position.distanceTo(pos);
+              if (d < r) {
+                damageEnemy(e2, L.dmg * (1 - d / r));
+              }
+            }
+            for (let j = 0; j < 25; j++) {
+              spawnHitParticles(pos, 0xff6600);
+            }
+            flashScreen(0xff4400, 0.2);
+            sfx.explode();
+            removeLaser(li);
+            break;
+          }
+        }
+        continue;
+      }
+
       let hit = false;
       for (let ei = enemies.length - 1; ei >= 0; ei--) {
         const e = enemies[ei];
@@ -983,7 +1323,7 @@ function mainGame() {
         const dist = pos.distanceTo(eCenter);
         const hitR = (e.isBoss ? 2.0 : 1.2) + 0.3;
         if (dist < hitR) {
-          damageEnemy(e, 20);
+          damageEnemy(e, L.dmg);
           hit = true;
           break;
         }
@@ -992,9 +1332,11 @@ function mainGame() {
     }
   }
 
-  // ============ МЕГА-ЛУЧ (толстый) ============
+  // ============================================================
+  // МЕГА-ЛУЧ
+  // ============================================================
   const MEGA_LENGTH = 80;
-  const MEGA_THICK = 0.9;      // ← было 0.4 — теперь в 2.25 раза толще
+  const MEGA_THICK = 0.9;
   const MEGA_DURATION = 3.0;
   const MEGA_DPS = 800;
 
@@ -1096,7 +1438,6 @@ function mainGame() {
 
     megaBeam.light.intensity = 5 * fade;
 
-    // Урон ВСЕМ врагам, кого пересекает луч
     if (megaBeamActive) {
       const startPoint = megaBeam.group.position.clone();
       for (let ei = enemies.length - 1; ei >= 0; ei--) {
@@ -1119,10 +1460,33 @@ function mainGame() {
     }
   }
 
-  // ============ УРОН / СМЕРТЬ / ЧАСТИЦЫ ============
+  // ============================================================
+  // УРОН / СМЕРТЬ / ЧАСТИЦЫ
+  // ============================================================
   function damageEnemy(e, dmg) {
+    // Щит
+    if (e.shieldHp > 0) {
+      e.shieldHp -= dmg;
+      if (e.shieldHp < 0) {
+        e.hp += e.shieldHp;
+        e.shieldHp = 0;
+        if (e.shieldMesh) e.shieldMesh.visible = false;
+      } else {
+        // Щит принял урон
+        if (e.shieldMesh) {
+          e.shieldMesh.material.opacity = 0.2 + (e.shieldHp / 200) * 0.3;
+        }
+      }
+      spawnHitParticles(
+        e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
+        0x00aaff
+      );
+      if (e.hp <= 0) killEnemy(e);
+      return;
+    }
+
     e.hp -= dmg;
-    if (Math.random() < 0.06) {
+    if (Math.random() < 0.1) {
       spawnHitParticles(
         e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
         e.style.acc
@@ -1137,6 +1501,27 @@ function mainGame() {
     if (i >= 0) enemies.splice(i, 1);
     score += (10 + e.maxHp) * (e.isBoss ? 5 : 1);
     kills++;
+
+    // XP и кредиты
+    const xpGain = e.isBoss ? 100 : Math.floor(5 + e.maxHp / 5);
+    const creditGain = e.isBoss ? 50 : Math.floor(2 + e.maxHp / 20);
+    xp += xpGain;
+    credits += creditGain;
+
+    // Проверка уровня
+    while (xp >= xpNext) {
+      xp -= xpNext;
+      level++;
+      xpNext = Math.floor(xpNext * 1.4);
+      maxHp += 20;
+      hp = maxHp;
+      damageMult += 0.1;
+      speedMult += 0.05;
+      flashScreen(0xff0, 0.3);
+      addKillFeed('⭐ УРОВЕНЬ ' + level + '!');
+      sfx.levelup();
+    }
+
     updateHUD();
     addKillFeed(e.style.name + (e.isBoss ? ' [BOSS]' : ''));
     sfx.explode();
@@ -1222,7 +1607,9 @@ function mainGame() {
     }
   }
 
-  // ============ СОСТОЯНИЕ ============
+  // ============================================================
+  // СОСТОЯНИЕ
+  // ============================================================
   let hp = 100;
   let energy = 0;
   let charging = false;
@@ -1236,6 +1623,7 @@ function mainGame() {
   let onGround = true;
   let jumpCount = 0;
   let shootCooldown = 0;
+  let shopShownThisWave = false;
 
   const hpFill = document.getElementById('hpFill');
   const enFill = document.getElementById('enFill');
@@ -1252,11 +1640,30 @@ function mainGame() {
   document.body.appendChild(killFeed);
 
   function updateHUD() {
-    hpFill.style.width = Math.max(0, hp) + '%';
+    const hpPercent = Math.max(0, (hp / maxHp) * 100);
+    hpFill.style.width = hpPercent + '%';
     enFill.style.width = energy + '%';
     scoreEl.textContent = 'SCORE: ' + score;
     killsEl.textContent = 'KILLS: ' + kills;
     waveEl.textContent = 'WAVE: ' + wave;
+
+    document.getElementById('xpFill').style.width =
+      Math.min(100, (xp / xpNext) * 100) + '%';
+    document.getElementById('levelText').textContent =
+      'LVL ' + level + ' · ' + xp + ' / ' + xpNext + ' XP · 💰 ' + credits;
+
+    const w = WEAPONS[currentWeapon];
+    document.getElementById('weaponInfo').textContent =
+      w.icon + ' ' + w.name + ' · [1-5]';
+
+    const abDash = document.getElementById('abDash');
+    const abShield = document.getElementById('abShield');
+    const abTeleport = document.getElementById('abTeleport');
+
+    if (abDash) abDash.className = 'ability' + (dashCD > 0 ? ' cooldown' : '');
+    if (abShield) abShield.className = 'ability' + (shieldCD > 0 ? ' cooldown' : '');
+    if (abTeleport) abTeleport.className = 'ability' + (teleportCD > 0 ? ' cooldown' : '');
+
     if (waveState === 'preparing') {
       waveInfoEl.innerHTML = 'ВОЛНА ' + wave + ' ЧЕРЕЗ<br><span style="font-size:36px;color:#0ff;">' + Math.ceil(waveTimer) + '</span>';
     } else if (waveState === 'cleared') {
@@ -1289,21 +1696,30 @@ function mainGame() {
     setTimeout(function() { div.remove(); }, 500);
   }
 
+  function showBossPhase(text) {
+    const div = document.createElement('div');
+    div.className = 'bossPhase';
+    div.textContent = text;
+    document.body.appendChild(div);
+    setTimeout(function() { div.remove(); }, 2000);
+  }
+
   function endGame() {
     gameOver = true;
     document.getElementById('finalScore').textContent =
-      'SCORE: ' + score + ' | KILLS: ' + kills + ' | WAVE: ' + wave;
+      'SCORE: ' + score + ' | KILLS: ' + kills + ' | WAVE: ' + wave + ' | LVL: ' + level;
     gameoverEl.style.display = 'flex';
     cameraLocked = false;
     document.body.style.cursor = 'crosshair';
   }
 
-  // ============ МЫШЬ ============
+  // ============================================================
+  // МЫШЬ
+  // ============================================================
   let mouseDownL = false;
 
   renderer.domElement.addEventListener('mousedown', function(e) {
     if (e.button === 0) mouseDownL = true;
-    // ПКМ — включить режим камеры (курсор скрывается)
     if (e.button === 2) {
       cameraLocked = true;
       document.body.style.cursor = 'none';
@@ -1312,7 +1728,6 @@ function mainGame() {
 
   renderer.domElement.addEventListener('mouseup', function(e) {
     if (e.button === 0) mouseDownL = false;
-    // ПКМ отпущена — выключить режим камеры (курсор возвращается)
     if (e.button === 2) {
       cameraLocked = false;
       document.body.style.cursor = 'crosshair';
@@ -1323,30 +1738,73 @@ function mainGame() {
     e.preventDefault();
   });
 
-  // ============ КЛАВИША R — МЕГА-ЛУЧ ============
+  // ============================================================
+  // КЛАВИШИ
+  // ============================================================
   let rKeyHeld = false;
 
   addEventListener('keydown', function(e) {
     if (e.code === 'KeyR') rKeyHeld = true;
+
+    // Оружие — цифры 1-5
+    if (e.code === 'Digit1') currentWeapon = 'pistol';
+    if (e.code === 'Digit2') currentWeapon = 'shotgun';
+    if (e.code === 'Digit3') currentWeapon = 'sniper';
+    if (e.code === 'Digit4') currentWeapon = 'rocket';
+    if (e.code === 'Digit5') currentWeapon = 'rifle';
+
+    // Способности
+    if (e.code === 'KeyQ') useShield();
+    if (e.code === 'KeyF') useTeleport();
+
+    // Рывок — Shift+W
+    if (e.code === 'KeyW' && (keys['ShiftLeft'] || keys['ShiftRight'])) {
+      useDash();
+    }
   });
+
   addEventListener('keyup', function(e) {
     if (e.code === 'KeyR') rKeyHeld = false;
   });
 
-  // ============ НАПРАВЛЕНИЕ СТРЕЛЬБЫ — ОТ ИГРОКА К ПРИЦЕЛУ ============
+  // ============================================================
+  // СПОСОБНОСТИ
+  // ============================================================
+  function useDash() {
+    if (dashCD > 0) return;
+    dashCD = 3;
+    const camFwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+    player.position.addScaledVector(camFwd, 8);
+    flashScreen(0x00ffff, 0.2);
+    sfx.dash();
+  }
+
+  function useShield() {
+    if (shieldCD > 0 || shieldActive > 0) return;
+    shieldCD = 15;
+    shieldActive = shieldDuration;
+    flashScreen(0x00aaff, 0.3);
+    sfx.shield();
+  }
+
+  function useTeleport() {
+    if (teleportCD > 0) return;
+    teleportCD = 20;
+    const camFwd = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw));
+    player.position.addScaledVector(camFwd, 10);
+    flashScreen(0x8800ff, 0.4);
+    sfx.teleport();
+  }
+
+  // ============================================================
+  // НАПРАВЛЕНИЕ СТРЕЛЬБЫ
+  // ============================================================
   function getAimDirection() {
-    // Нормализованные координаты прицела на экране
     const nx = (mouseScreenX / innerWidth) * 2 - 1;
     const ny = -(mouseScreenY / innerHeight) * 2 + 1;
-
-    // Луч из камеры через точку прицела
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera({ x: nx, y: ny }, camera);
-
-    // Точка на 100 единиц от камеры по лучу
     const targetPoint = raycaster.ray.at(100, new THREE.Vector3());
-
-    // Направление от игрока к этой точке
     const origin = player.position.clone();
     origin.y += 1.5;
     return targetPoint.sub(origin).normalize();
@@ -1360,7 +1818,9 @@ function mainGame() {
     spawnEnemy(Math.floor(Math.random() * robotStyles.length), new THREE.Vector3(x, 0, z));
   }
 
-  // ============ ИГРОВОЙ ЦИКЛ ============
+  // ============================================================
+  // ИГРОВОЙ ЦИКЛ
+  // ============================================================
   const clock = new THREE.Clock();
   let camPosLerp = new THREE.Vector3(0, 5, 8);
   let camLookLerp = new THREE.Vector3(0, 1.5, 0);
@@ -1368,10 +1828,25 @@ function mainGame() {
 
   function animate() {
     requestAnimationFrame(animate);
-    if (gameOver) { renderer.render(scene, camera); return; }
+    if (gameOver || shopOpen) {
+      renderer.render(scene, camera);
+      return;
+    }
 
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
+
+    // Кулдауны способностей
+    dashCD -= dt;
+    shieldCD -= dt;
+    teleportCD -= dt;
+    shieldActive -= dt;
+    if (shieldActive > 0) {
+      shieldMesh.visible = true;
+      shieldMesh.material.opacity = 0.2 + Math.sin(t * 8) * 0.1;
+    } else {
+      shieldMesh.visible = false;
+    }
 
     for (let i = 0; i < cityLights.length; i++) {
       const cl = cityLights[i];
@@ -1385,8 +1860,8 @@ function mainGame() {
     if (keys['KeyA'] || keys['ArrowLeft'])  moveDir.x -= 1;
     if (keys['KeyD'] || keys['ArrowRight']) moveDir.x += 1;
 
-    const isRunning = keys['ShiftLeft'] || keys['ShiftRight'];
-    const baseSpeed = isRunning ? 12 : 6;
+    const isRunning = (keys['ShiftLeft'] || keys['ShiftRight']);
+    const baseSpeed = (isRunning ? 12 : 6) * speedMult;
     let isMoving = false;
 
     if (moveDir.lengthSq() > 0) {
@@ -1458,24 +1933,36 @@ function mainGame() {
     camera.position.copy(camPosLerp);
     camera.lookAt(camLookLerp);
 
-    // Прицел следует за мышью
+    // Прицел за мышью
     if (crosshairEl) {
       crosshairEl.style.left = (mouseScreenX - 16) + 'px';
       crosshairEl.style.top = (mouseScreenY - 16) + 'px';
     }
 
-    // ЛКМ — плазма
+    // ЛКМ — стрельба
     shootCooldown -= dt;
     if (mouseDownL && shootCooldown <= 0) {
+      const weapon = WEAPONS[currentWeapon];
       const origin = player.position.clone();
       origin.y += 1.6;
-      const dir = getAimDirection();
-      origin.add(dir.clone().multiplyScalar(1));
-      firePlasma(origin, dir);
-      shootCooldown = 0.35;
+
+      // Стрельба с несколькими шарами (дробовик)
+      for (let s = 0; s < weapon.count; s++) {
+        const dir = getAimDirection();
+        // Разброс
+        if (weapon.spread > 0) {
+          dir.x += (Math.random() - 0.5) * weapon.spread;
+          dir.y += (Math.random() - 0.5) * weapon.spread;
+          dir.z += (Math.random() - 0.5) * weapon.spread;
+          dir.normalize();
+        }
+        const o = origin.clone().add(dir.clone().multiplyScalar(1));
+        firePlasma(o, dir, weapon);
+      }
+      shootCooldown = weapon.cd * cdMult;
     }
 
-    // R — заряд / мега-луч
+    // R — мега-луч
     if (rKeyHeld) {
       if (!charging && !megaBeamActive) {
         charging = true;
@@ -1526,7 +2013,9 @@ function mainGame() {
 
     checkLaserHits();
 
-    // Враги
+    // ============================================================
+    // ВРАГИ — УЛУЧШЕННЫЙ ИИ
+    // ============================================================
     for (let i = 0; i < enemies.length; i++) {
       const e = enemies[i];
       const toPlayer = player.position.clone().sub(e.mesh.position);
@@ -1541,9 +2030,93 @@ function mainGame() {
       if (e.mesh.userData.ring2) e.mesh.userData.ring2.rotation.z -= dt * 2;
       if (e.mesh.userData.crown) e.mesh.userData.crown.rotation.z += dt * 2;
 
-      if (dist > 2.2) {
-        const speedMul = e.isBoss ? 0.7 : 1;
-        e.mesh.position.addScaledVector(toPlayer, e.speed * speedMul * dt);
+      // ========== ПОВЕДЕНИЕ ==========
+      let moveSpeedMul = 1;
+      let shouldMove = true;
+      let attackRange = 2.5;
+
+      if (e.behavior === 'kamikaze') {
+        // Быстро летит, взрывается
+        moveSpeedMul = 1.5;
+        attackRange = 1.8;
+      } else if (e.behavior === 'sniper') {
+        // Стоит на месте, стреляет
+        if (dist > 30) shouldMove = true;
+        else if (dist < 20) shouldMove = true; // отбегает
+        else shouldMove = false;
+        moveSpeedMul = 1;
+        attackRange = 0; // не подходит
+      } else if (e.behavior === 'healer') {
+        // Ищет раненых роботов
+        moveSpeedMul = 0.8;
+        attackRange = 0;
+      } else if (e.behavior === 'shielder') {
+        moveSpeedMul = 0.8;
+      } else if (e.behavior === 'spider') {
+        moveSpeedMul = 1.4;
+        // Прыгает иногда
+      } else if (e.behavior === 'tank') {
+        moveSpeedMul = 0.7;
+        attackRange = 3.5;
+      } else if (e.behavior === 'ghost') {
+        // Мигает — исчезает и появляется
+        e.ghostPhase += dt * 2;
+        const phase = Math.sin(e.ghostPhase);
+        if (phase > 0.5) {
+          e.mesh.visible = false;
+          // Телепортируется ближе к игроку
+          if (Math.random() < 0.02) {
+            e.mesh.position.copy(player.position).add(
+              new THREE.Vector3(
+                (Math.random() - 0.5) * 10,
+                1.5,
+                (Math.random() - 0.5) * 10
+              )
+            );
+          }
+          shouldMove = false;
+        } else {
+          e.mesh.visible = true;
+          moveSpeedMul = 1.5;
+        }
+      } else if (e.behavior === 'commander') {
+        // Даёт бафф всем вокруг
+        e.commanderBuff += dt;
+        if (e.commanderBuff > 0.5) {
+          e.commanderBuff = 0;
+          for (const e2 of enemies) {
+            if (e2 === e) continue;
+            if (e2.mesh.position.distanceTo(e.mesh.position) < 20) {
+              e2.commanderBuff = 3; // бафф на 3 сек
+            }
+          }
+        }
+        moveSpeedMul = 0.9;
+      }
+
+      // Бафф от командира
+      if (e.commanderBuff > 0) {
+        e.commanderBuff -= dt;
+        moveSpeedMul *= 1.3;
+      }
+
+      // Страх — если HP < 25%, убегает
+      if (e.hp < e.maxHp * 0.25 && e.behavior !== 'kamikaze' && e.behavior !== 'tank') {
+        e.fear = true;
+        // Отбегает от игрока
+        e.mesh.position.addScaledVector(toPlayer, -e.speed * 0.7 * dt);
+      } else {
+        e.fear = false;
+        // Тактика: немного смещаются вбок при приближении
+        if (dist > 5 && dist < 15 && Math.random() < 0.02) {
+          const side = new THREE.Vector3(-toPlayer.z, 0, toPlayer.x);
+          e.mesh.position.addScaledVector(side, (Math.random() - 0.5) * 5);
+        }
+
+        if (shouldMove && dist > (e.behavior === 'tank' ? 2.8 : 2.2)) {
+          const speedMul = e.isBoss ? 0.7 : 1;
+          e.mesh.position.addScaledVector(toPlayer, e.speed * moveSpeedMul * speedMul * dt);
+        }
       }
 
       const targetRot = Math.atan2(toPlayer.x, toPlayer.z);
@@ -1555,19 +2128,99 @@ function mainGame() {
         e.mesh.userData.leftArm.rotation.x = -0.5 - swing;
       }
 
+      // ========== АТАКИ ==========
       e.attackCD -= dt;
-      if (dist < 2.5 && e.attackCD <= 0) {
-        hp -= e.dmg;
-        e.attackCD = e.isBoss ? 0.6 : 1.0;
-        updateHUD();
-        flashScreen(0xff0000, 0.28);
-        showDamage();
-        sfx.hurt();
-        if (hp <= 0) { hp = 0; updateHUD(); endGame(); }
+      e.shootCD -= dt;
+      e.healCD -= dt;
+
+      // Камикадзе — взрывается
+      if (e.behavior === 'kamikaze' && dist < attackRange && e.attackCD <= 0) {
+        // Взрыв
+        if (dist < 4) {
+          hp -= e.dmg;
+          flashScreen(0xff4400, 0.5);
+          showDamage();
+          sfx.hurt();
+          if (hp <= 0) { hp = 0; updateHUD(); endGame(); }
+        }
+        for (let j = 0; j < 20; j++) spawnHitParticles(e.mesh.position, 0xff6600);
+        scene.remove(e.mesh);
+        enemies.splice(i, 1);
+        i--;
+        continue;
+      }
+
+      // Снайпер — стреляет
+      if (e.behavior === 'sniper' && dist < 40 && e.shootCD <= 0) {
+        // Луч напрямую
+        spawnHitParticles(e.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 0xffff00);
+        // Урон с задержкой
+        if (Math.random() < 0.7) {
+          hp -= e.dmg;
+          flashScreen(0xffff00, 0.3);
+          showDamage();
+          sfx.hurt();
+          if (hp <= 0) { hp = 0; updateHUD(); endGame(); }
+        }
+        e.shootCD = 3.0;
+      }
+
+      // Ремонтник — лечит
+      if (e.behavior === 'healer' && e.healCD <= 0) {
+        for (const e2 of enemies) {
+          if (e2 === e) continue;
+          if (e2.hp < e2.maxHp && e2.mesh.position.distanceTo(e.mesh.position) < 15) {
+            e2.hp = Math.min(e2.maxHp, e2.hp + 30);
+            spawnHitParticles(
+              e2.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)),
+              0x00ff00
+            );
+          }
+        }
+        e.healCD = 2.0;
+      }
+
+      // Обычная атака
+      if (e.behavior !== 'sniper' && e.behavior !== 'healer' && e.behavior !== 'kamikaze') {
+        if (dist < attackRange && e.attackCD <= 0) {
+          hp -= e.dmg;
+          e.attackCD = e.isBoss ? 0.6 : 1.0;
+          updateHUD();
+          flashScreen(0xff0000, 0.28);
+          showDamage();
+          sfx.hurt();
+          if (hp <= 0) { hp = 0; updateHUD(); endGame(); }
+        }
+      }
+
+      // ========== БОСС — ФАЗЫ ==========
+      if (e.isBoss) {
+        const hpPercent = e.hp / e.maxHp;
+        let newPhase = 1;
+        if (hpPercent < 0.3) newPhase = 3;
+        else if (hpPercent < 0.6) newPhase = 2;
+
+        if (newPhase !== e.bossPhase) {
+          e.bossPhase = newPhase;
+          if (newPhase === 2) {
+            showBossPhase('БОСС: ФАЗА 2 — БЕШЕНСТВО');
+            e.speed *= 1.5;
+            e.dmg *= 1.3;
+          } else if (newPhase === 3) {
+            showBossPhase('БОСС: ФАЗА 3 — ЯРОСТЬ');
+            e.speed *= 1.4;
+            e.dmg *= 1.5;
+            e.attackCD = 0.3;
+          }
+          flashScreen(0xff0000, 0.4);
+          sfx.boss();
+        }
       }
     }
 
-    // Волны
+    // ============================================================
+    // ВОЛНЫ
+    // ============================================================
     waveTimer -= dt;
     if (waveState === 'preparing') {
       updateHUD();
@@ -1587,6 +2240,7 @@ function mainGame() {
               spawnEnemy(Math.floor(Math.random() * robotStyles.length), new THREE.Vector3(x, 0, z), true);
               sfx.boss();
               flashScreen(0xff00ff, 0.4);
+              showBossPhase('⚠ БОСС ⚠');
             }
           }, count * 250 + 500);
         }
@@ -1605,6 +2259,13 @@ function mainGame() {
       if (enemies.length === 0 && waveTimer < -2) {
         waveState = 'cleared';
         waveTimer = 3;
+        // Открываем магазин между волнами
+        if (!shopShownThisWave) {
+          shopShownThisWave = true;
+          setTimeout(function() {
+            openShop();
+          }, 1000);
+        }
       }
     } else if (waveState === 'cleared') {
       updateHUD();
@@ -1612,7 +2273,8 @@ function mainGame() {
         wave++;
         waveState = 'preparing';
         waveTimer = 5;
-        hp = Math.min(100, hp + 20);
+        hp = Math.min(maxHp, hp + 20);
+        shopShownThisWave = false;
         updateHUD();
       }
     }
@@ -1626,7 +2288,7 @@ function mainGame() {
       p.life -= dt;
       const d = player.position.distanceTo(p.mesh.position);
       if (d < 1.6) {
-        if (p.type === 'health') { hp = Math.min(100, hp + 30); flashScreen(0x00ff88, 0.15); }
+        if (p.type === 'health') { hp = Math.min(maxHp, hp + 30); flashScreen(0x00ff88, 0.15); }
         else { energy = Math.min(100, energy + 50); flashScreen(0xffaa00, 0.15); }
         updateHUD();
         sfx.pickup();
@@ -1649,6 +2311,9 @@ function mainGame() {
       if (p.mesh.material) p.mesh.material.opacity = p.life / p.maxLife;
       if (p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
     }
+
+    // Обновляем HUD для кулдаунов
+    updateHUD();
 
     renderer.render(scene, camera);
   }
